@@ -81,6 +81,8 @@ to a multiple of four components so every row starts on a 16-byte
 boundary. The search loops read the whole matrix through a single
 `Float32x4List` view: no per-row alignment checks, no tails.
 
+![vector_kit memory layout: rows packed end to end in one Float32List with padding, viewed through a single Float32x4List for top-k search](https://raw.githubusercontent.com/Yusufihsangorgel/vector_kit/main/doc/layout.png)
+
 - `add(row)` copies the row in and caches its L2 norm.
 - `topKCosine(query, k)`, `topKDot(query, k)`, and
   `topKEuclidean(query, k)` return `(index, score)` records, best

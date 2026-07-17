@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="360" viewBox="0 0 1180 360" font-family="Menlo, monospace">
+  <defs>
+    <marker id="arw" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#38BDF8"/>
+    </marker>
+    <marker id="arwd" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#64748B"/>
+    </marker>
+  </defs>
+
+  <rect width="1180" height="360" fill="#0B1220"/>
+  <text x="44" y="50" font-size="22" font-weight="bold" fill="#E2E8F0">How vector_kit packs a matrix</text>
+  <text x="44" y="78" font-size="14" fill="#94A3B8">Rows sit end to end in one Float32List, each padded to a multiple of four floats so a Float32x4List view stays aligned.</text>
+
+  <!-- INPUT box: add(row) -->
+  <rect x="44" y="150" width="180" height="156" rx="12" fill="#0E1A2E" stroke="#1E3A5F" stroke-width="1.5"/>
+  <text x="60" y="176" font-size="12" fill="#64748B">INPUT</text>
+  <text x="60" y="202" font-size="15" fill="#E2E8F0">add(row)</text>
+  <text x="60" y="230" font-size="12" fill="#94A3B8">copies the row into</text>
+  <text x="60" y="248" font-size="12" fill="#94A3B8">the next row slot,</text>
+  <text x="60" y="266" font-size="12" fill="#94A3B8">pads to the 8-float</text>
+  <text x="60" y="284" font-size="12" fill="#94A3B8">stride, caches its</text>
+  <text x="60" y="302" font-size="12" fill="#94A3B8">L2 norm.</text>
+
+  <!-- buffer section label -->
+  <text x="262" y="120" font-size="13" fill="#64748B">Float32List _data  ·  one contiguous buffer, N rows back to back, row-major</text>
+
+  <!-- row group labels -->
+  <text x="410" y="140" font-size="11" fill="#94A3B8" text-anchor="middle">row 0</text>
+  <text x="706" y="140" font-size="11" fill="#94A3B8" text-anchor="middle">row 1</text>
+
+  <!-- buffer cells: row 0 (d0..d5 + pad pad) -->
+  <rect x="262" y="152" width="37" height="54" rx="4" fill="#111C2E" stroke="#1E3A5F" stroke-width="1"/>
+  <text x="280.5" y="183" font-size="9" fill="#E2E8F0" text-anchor="middle">d0</text>
+  <rect x="299" y="152" width="37" height="54" rx="4" fill="#111C2E" stroke="#1E3A5F" stroke-width="1"/>
+  <text x="317.5" y="183" font-size="9" fill="#E2E8F0" text-anchor="middle">d1</text>
+  <rect x="336" y="152" width="37" height="54" rx="4" fill="#111C2E" stroke="#1E3A5F" stroke-width="1"/>
+  <text x="354.5" y="183" font-size="9" fill="#E2E8F0" text-anchor="middle">d2</text>
+  <rect x="373" y="152" width="37" height="54" rx="4" fill="#111C2E" stroke="#1E3A5F" stroke-width="1"/>
+  <text x="391.5" y="183" font-size="9" fill="#E2E8F0" text-anchor="middle">d3</text>
+  <rect x="410" y="152" width="37" height="54" rx="4" fill="#111C2E" stroke="#1E3A5F" stroke-width="1"/>
+  <text x="428.5" y="183" font-size="9" fill="#E2E8F0" text-anchor="middle">d4</text>
+  <rect x="447" y="152" width="37" height="54" rx="4" fill="#111C2E" stroke="#1E3A5F" stroke-width="1"/>
+  <text x="465.5" y="183" font-size="9" fill="#E2E8F0" text-anchor="middle">d5</text>
+  <rect x="484" y="152" width="37" height="54" rx="4" fill="#0B1220" stroke="#334155" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="502.5" y="183" font-size="9" fill="#64748B" text-anchor="middle">pad</text>
+  <rect x="521" y="152" width="37" height="54" rx="4" fill="#0B1220" stroke="#334155" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="539.5" y="183" font-size="9" fill="#64748B" text-anchor="middle">pad</text>
+
+  <!-- buffer cells: row 1 (d0..d5 + pad pad) -->
+  <rect x="558" y="152" width="37" height="54" rx="4" fill="#111C2E" stroke="#1E3A5F" stroke-width="1"/>
+  <text x="576.5" y="183" font-size="9" fill="#E2E8F0" text-anchor="middle">d0</text>
+  <rect x="595" y="152" width="37" height="54" rx="4" fill="#111C2E" stroke="#1E3A5F" stroke-width="1"/>
+  <text x="613.5" y="183" font-size="9" fill="#E2E8F0" text-anchor="middle">d1</text>
+  <rect x="632" y="152" width="37" height="54" rx="4" fill="#111C2E" stroke="#1E3A5F" stroke-width="1"/>
+  <text x="650.5" y="183" font-size="9" fill="#E2E8F0" text-anchor="middle">d2</text>
+  <rect x="669" y="152" width="37" height="54" rx="4" fill="#111C2E" stroke="#1E3A5F" stroke-width="1"/>
+  <text x="687.5" y="183" font-size="9" fill="#E2E8F0" text-anchor="middle">d3</text>
+  <rect x="706" y="152" width="37" height="54" rx="4" fill="#111C2E" stroke="#1E3A5F" stroke-width="1"/>
+  <text x="724.5" y="183" font-size="9" fill="#E2E8F0" text-anchor="middle">d4</text>
+  <rect x="743" y="152" width="37" height="54" rx="4" fill="#111C2E" stroke="#1E3A5F" stroke-width="1"/>
+  <text x="761.5" y="183" font-size="9" fill="#E2E8F0" text-anchor="middle">d5</text>
+  <rect x="780" y="152" width="37" height="54" rx="4" fill="#0B1220" stroke="#334155" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="798.5" y="183" font-size="9" fill="#64748B" text-anchor="middle">pad</text>
+  <rect x="817" y="152" width="37" height="54" rx="4" fill="#0B1220" stroke="#334155" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="835.5" y="183" font-size="9" fill="#64748B" text-anchor="middle">pad</text>
+
+  <!-- row boundary + continuation -->
+  <line x1="558" y1="150" x2="558" y2="208" stroke="#64748B" stroke-width="2"/>
+  <text x="878" y="187" font-size="18" fill="#64748B">...</text>
+
+  <!-- reinterpret arrow + label between the two strips -->
+  <path d="M300 210 L300 246" stroke="#38BDF8" stroke-width="2" fill="none" marker-end="url(#arw)"/>
+  <text x="560" y="232" font-size="12" fill="#38BDF8" text-anchor="middle">Float32x4List.view : the same bytes, read as SIMD lanes</text>
+
+  <!-- lanes box (the one accent box: a single SIMD view) -->
+  <rect x="262" y="250" width="592" height="56" rx="8" fill="#0E1A2E" stroke="#38BDF8" stroke-width="1.5"/>
+  <line x1="410" y1="250" x2="410" y2="306" stroke="#1E3A5F" stroke-width="1"/>
+  <line x1="558" y1="250" x2="558" y2="306" stroke="#1E3A5F" stroke-width="1"/>
+  <line x1="706" y1="250" x2="706" y2="306" stroke="#1E3A5F" stroke-width="1"/>
+  <text x="336" y="276" font-size="12" fill="#E2E8F0" text-anchor="middle">lane 0</text>
+  <text x="336" y="292" font-size="9" fill="#64748B" text-anchor="middle">f0..f3</text>
+  <text x="484" y="276" font-size="12" fill="#E2E8F0" text-anchor="middle">lane 1</text>
+  <text x="484" y="292" font-size="9" fill="#64748B" text-anchor="middle">f4..f7</text>
+  <text x="632" y="276" font-size="12" fill="#E2E8F0" text-anchor="middle">lane 2</text>
+  <text x="632" y="292" font-size="9" fill="#64748B" text-anchor="middle">f8..f11</text>
+  <text x="780" y="276" font-size="12" fill="#E2E8F0" text-anchor="middle">lane 3</text>
+  <text x="780" y="292" font-size="9" fill="#64748B" text-anchor="middle">f12..f15</text>
+
+  <!-- lanes helper -->
+  <text x="262" y="330" font-size="11" fill="#64748B">stride = 8 floats = 2 lanes per row, so every row is 16-byte aligned and the SIMD view needs no scalar tail.</text>
+
+  <!-- SEARCH box: topK* (accent) -->
+  <rect x="936" y="150" width="200" height="156" rx="12" fill="#0E1A2E" stroke="#38BDF8" stroke-width="1.5"/>
+  <text x="952" y="176" font-size="12" fill="#64748B">SEARCH</text>
+  <text x="952" y="202" font-size="14" fill="#E2E8F0">topKCosine</text>
+  <text x="952" y="222" font-size="14" fill="#E2E8F0">topKDot</text>
+  <text x="952" y="242" font-size="14" fill="#E2E8F0">topKEuclidean</text>
+  <text x="952" y="268" font-size="12" fill="#94A3B8">one SIMD dot per row</text>
+  <text x="952" y="286" font-size="12" fill="#94A3B8">through _lanes, no</text>
+  <text x="952" y="304" font-size="12" fill="#94A3B8">per-vector allocation.</text>
+
+  <!-- flow arrows -->
+  <path d="M226 178 L258 178" stroke="#64748B" stroke-width="1.8" fill="none" marker-end="url(#arwd)"/>
+  <path d="M856 278 L932 278" stroke="#38BDF8" stroke-width="2" fill="none" marker-end="url(#arw)"/>
+</svg>
