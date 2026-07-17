@@ -1,3 +1,5 @@
+![vector_kit: SIMD-accelerated vector math for embeddings](doc/banner.png)
+
 # vector_kit
 
 SIMD-accelerated vector math for embeddings: dot product, cosine
@@ -40,6 +42,8 @@ A runnable version is in `example/vector_kit_example.dart`.
 
 From `bench/bench.dart` on an Apple M-series laptop, Dart 3.11, JIT
 (`dart run bench/bench.dart`), 768-dimensional vectors:
+
+![benchmark](doc/bench.png)
 
 | Workload                    | Baseline                          | vector_kit   | Speedup |
 | --------------------------- | --------------------------------- | ------------ | ------- |
