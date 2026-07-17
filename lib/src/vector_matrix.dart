@@ -23,10 +23,12 @@ class VectorMatrix {
     if (dimension < 1) {
       throw ArgumentError.value(dimension, 'dimension', 'must be positive');
     }
-    _capacity = _initialCapacity;
-    _data = Float32List(_capacity * _stride);
+    // Storage is allocated lazily on the first add, so an empty matrix
+    // costs nothing regardless of its dimension.
+    _capacity = 0;
+    _data = Float32List(0);
     _lanes = lanesOf(_data);
-    _norms = Float64List(_capacity);
+    _norms = Float64List(0);
   }
 
   /// Builds a matrix from [rows], converting each row to single
@@ -83,11 +85,25 @@ class VectorMatrix {
     if (dimension == 0) {
       throw FormatException('dimension must be positive');
     }
-    final expected = _headerLength + 4 * dimension * count;
-    if (bytes.length != expected) {
+    // Validate against the actual payload size before allocating anything.
+    // A product of two hostile uint32s can overflow or pass a naive length
+    // check while describing a multi-gigabyte allocation.
+    final body = bytes.length - _headerLength;
+    if (body % 4 != 0) {
       throw FormatException(
-        'expected $expected bytes for $count rows of dimension $dimension, '
-        'got ${bytes.length}',
+        'payload is not a whole number of float32 values: $body bytes',
+      );
+    }
+    final floats = body >> 2;
+    // Division instead of dimension * count: the product of two hostile
+    // uint32s can overflow 64-bit integers.
+    final consistent = count == 0
+        ? floats == 0
+        : floats % count == 0 && floats ~/ count == dimension;
+    if (!consistent) {
+      throw FormatException(
+        'declared $count rows of dimension $dimension do not match '
+        '$floats stored float32 values',
       );
     }
     final matrix = VectorMatrix(dimension).._ensureCapacity(count);
@@ -256,7 +272,9 @@ class VectorMatrix {
   ///
   /// Throws [ArgumentError] if [k] is not positive or if [query] does
   /// not have [dimension] components or contains a NaN or infinite
-  /// component.
+  /// component. As with [dot], scores can reach infinity when finite
+  /// inputs overflow single-precision accumulation; that needs
+  /// magnitudes around 1e38, far beyond real embedding values.
   List<(int index, double score)> topKDot(Float32List query, int k) {
     _checkK(k);
     final lanes = _prepareQuery(query);
@@ -348,7 +366,7 @@ class VectorMatrix {
 
   void _ensureCapacity(int rows) {
     if (rows <= _capacity) return;
-    var capacity = _capacity;
+    var capacity = _capacity < _initialCapacity ? _initialCapacity : _capacity;
     while (capacity < rows) {
       capacity *= 2;
     }

@@ -108,8 +108,12 @@ result comes back non-finite.
 Accumulation happens in `Float32x4` lanes, so results differ from an
 exact double-precision sum. The test suite pins the difference to
 within 1e-5 relative to the product of the input norms at dimensions
-up to 1024. If you need double-precision accumulation, this package
-is the wrong tool.
+up to 1024. The scalar tail (the last `length % 4` components)
+accumulates in double precision, so components tiny enough to
+underflow float32 (below about 1e-38) can contribute or vanish
+depending on their position; real embedding values are many orders of
+magnitude above that floor. If you need double-precision
+accumulation, this package is the wrong tool.
 
 Inputs are accepted as any `Float32List`, including views. A view
 that does not start on a 16-byte boundary is copied internally before

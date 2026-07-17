@@ -378,4 +378,41 @@ void main() {
       expect(() => VectorMatrix.fromBytes(bytes), throwsFormatException);
     });
   });
+
+  group('hostile fromBytes headers', () {
+    Uint8List header(int dimension, int count) {
+      final bytes = Uint8List(12);
+      bytes.setAll(0, 'VKT1'.codeUnits);
+      final data = ByteData.sublistView(bytes);
+      data.setUint32(4, dimension, Endian.little);
+      data.setUint32(8, count, Endian.little);
+      return bytes;
+    }
+
+    test('absurd dimension with zero rows does not allocate', () {
+      // Storage is lazy, so a hostile huge dimension with an empty
+      // payload yields a harmless empty matrix instead of a
+      // multi-gigabyte allocation.
+      final matrix = VectorMatrix.fromBytes(header(0xFFFFFFFF, 0));
+      expect(matrix.rowCount, 0);
+      expect(matrix.dimension, 0xFFFFFFFF);
+    });
+
+    test('dimension times count overflowing 64 bits fails cleanly', () {
+      expect(
+        () => VectorMatrix.fromBytes(header(0x80000000, 0x80000000)),
+        throwsFormatException,
+      );
+      expect(
+        () => VectorMatrix.fromBytes(header(0xFFFFFFFF, 0xFFFFFFFF)),
+        throwsFormatException,
+      );
+    });
+
+    test('payload with a partial float fails cleanly', () {
+      final bytes = Uint8List(12 + 6);
+      bytes.setRange(0, 12, header(1, 1));
+      expect(() => VectorMatrix.fromBytes(bytes), throwsFormatException);
+    });
+  });
 }
