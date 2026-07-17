@@ -44,6 +44,24 @@ double naiveDotFloat32(Float32List a, Float32List b) {
   return sum;
 }
 
+/// SIMD dot with a single accumulator: every add waits on the previous
+/// one. Kept here to show what the four independent accumulators in
+/// vector_kit buy.
+double simdDotOneAccumulator(Float32List a, Float32List b) {
+  final lanes = a.length >> 2;
+  final a4 = Float32x4List.view(a.buffer, a.offsetInBytes, lanes);
+  final b4 = Float32x4List.view(b.buffer, b.offsetInBytes, lanes);
+  var acc = Float32x4.zero();
+  for (var i = 0; i < lanes; i++) {
+    acc += a4[i] * b4[i];
+  }
+  var sum = acc.x + acc.y + acc.z + acc.w;
+  for (var i = lanes << 2; i < a.length; i++) {
+    sum += a[i] * b[i];
+  }
+  return sum;
+}
+
 double naiveCosine(Float32List a, Float32List b) {
   var dot = 0.0;
   var na = 0.0;
@@ -123,7 +141,12 @@ void benchDot() {
     naiveMs,
   );
   runDotVariant(
-    'vector_kit dot (SIMD)',
+    'SIMD, one accumulator',
+    (i) => simdDotOneAccumulator(a32[i & (pool - 1)], b32[i & (pool - 1)]),
+    naiveMs,
+  );
+  runDotVariant(
+    'vector_kit dot (SIMD, four accumulators)',
     (i) => dot(a32[i & (pool - 1)], b32[i & (pool - 1)]),
     naiveMs,
   );

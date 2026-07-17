@@ -49,9 +49,12 @@ From `bench/bench.dart` on an Apple M-series laptop, Dart 3.11, JIT
 | topKCosine k=10, 100k rows  | 82.0 ms/query, full scan and sort | 13.3 ms/query| 6.2x    |
 
 Compiled ahead of time (`dart compile exe`) the same benchmark gives
-127 ns/call for dot and 1.1 / 10.8 ms/query for the two top-k
-workloads. Run the benchmark on your own hardware before relying on
-any of these numbers.
+126 ns/call for dot and 1.0 / 10.5 ms/query for the two top-k
+workloads. The four independent accumulators in the dot kernel are
+worth about 8 percent over a single accumulator under the JIT and 14
+percent compiled; the benchmark measures both variants. Run the
+benchmark on your own hardware before relying on any of these
+numbers.
 
 The top-k gain over a full scan comes from three things: one SIMD dot
 product per row over a single packed buffer, L2 norms precomputed when
