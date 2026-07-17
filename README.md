@@ -1,4 +1,4 @@
-![vector_kit: SIMD-accelerated vector math for embeddings](doc/banner.png)
+![vector_kit banner](https://raw.githubusercontent.com/Yusufihsangorgel/vector_kit/main/doc/banner.png)
 
 # vector_kit
 
@@ -40,10 +40,10 @@ A runnable version is in `example/vector_kit_example.dart`.
 
 ## Measured performance
 
-From `bench/bench.dart` on an Apple M-series laptop, Dart 3.11, JIT
+From `bench/bench.dart` on an Apple M-series laptop, Dart 3.8+, JIT
 (`dart run bench/bench.dart`), 768-dimensional vectors:
 
-![benchmark](doc/bench.png)
+![benchmark](https://raw.githubusercontent.com/Yusufihsangorgel/vector_kit/main/doc/bench.png)
 
 | Workload                    | Baseline                          | vector_kit   | Speedup |
 | --------------------------- | --------------------------------- | ------------ | ------- |
