@@ -1,28 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400">
-  <defs>
-    <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1.6" fill="#E2E8F0" fill-opacity="0.05"/>
-    </pattern>
-  </defs>
-
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400" font-family="Menlo, monospace">
   <rect width="1200" height="400" fill="#0B1220"/>
-  <rect width="1200" height="400" fill="url(#dots)"/>
-
-  <!-- Motif: three vectors from a shared origin, arc marking the cosine angle -->
-  <g stroke="#38BDF8" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <!-- vector 1: shallow -->
-    <path d="M 880 290 L 1146 236 M 1146 236 l -21 -5 M 1146 236 l -17 13"/>
-    <!-- vector 2: middle -->
-    <path d="M 880 290 L 1104 132 M 1104 132 l -21 3 M 1104 132 l -6 21"/>
-    <!-- vector 3: steep -->
-    <path d="M 880 290 L 946 78 M 946 78 l -14 17 M 946 78 l 7 20"/>
-    <!-- cosine-angle arc between vector 1 and vector 2 -->
-    <path d="M 998 266 A 120 120 0 0 0 978 221"/>
+  <g opacity="0.9" font-size="12">
+    <!-- packed buffer: 4'lü lane'ler -->
+    <g>
+      <rect x="790" y="160" width="40" height="34" fill="#0E1A2E" stroke="#38BDF8"/><rect x="830" y="160" width="40" height="34" fill="#0E1A2E" stroke="#38BDF8"/><rect x="870" y="160" width="40" height="34" fill="#0E1A2E" stroke="#38BDF8"/><rect x="910" y="160" width="40" height="34" fill="#0E1A2E" stroke="#38BDF8"/>
+      <rect x="962" y="160" width="40" height="34" fill="#0E1A2E" stroke="#334155"/><rect x="1002" y="160" width="40" height="34" fill="#0E1A2E" stroke="#334155"/><rect x="1042" y="160" width="40" height="34" fill="#0E1A2E" stroke="#334155"/><rect x="1082" y="160" width="40" height="34" fill="#0E1A2E" stroke="#334155"/>
+    </g>
+    <text x="810" y="220" fill="#38BDF8" text-anchor="middle">Float32x4 lane</text>
+    <text x="810" y="150" fill="#64748B" text-anchor="middle">row 0</text>
+    <text x="1042" y="150" fill="#64748B" text-anchor="middle">row 1</text>
+    <text x="1042" y="220" fill="#64748B" text-anchor="middle">one packed buffer</text>
   </g>
-  <!-- origin dot -->
-  <circle cx="880" cy="290" r="5" fill="#38BDF8"/>
-
-  <!-- Wordmark, bottom-left -->
-  <text x="64" y="308" font-family="Menlo" font-size="64" font-weight="bold" fill="#E2E8F0">vector_kit</text>
-  <text x="64" y="352" font-family="Menlo" font-size="24" fill="#94A3B8">SIMD-accelerated vector math for embeddings</text>
+  <text x="64" y="212" font-size="56" font-weight="bold" fill="#E2E8F0">vector_kit</text>
+  <text x="66" y="256" font-size="23" fill="#94A3B8">SIMD vector math and top-k over packed matrices</text>
 </svg>
