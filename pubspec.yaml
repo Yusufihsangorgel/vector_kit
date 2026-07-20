@@ -1,6 +1,6 @@
 name: vector_kit
 description: "SIMD-accelerated vector math for embeddings: dot product, cosine similarity, normalization, and top-k search over packed matrices."
-version: 0.2.1
+version: 0.2.2
 repository: https://github.com/Yusufihsangorgel/vector_kit
 issue_tracker: https://github.com/Yusufihsangorgel/vector_kit/issues
 documentation: https://github.com/Yusufihsangorgel/vector_kit#readme
@@ -13,9 +13,8 @@ topics:
 
 screenshots:
   - description: >-
-      Nanoseconds per 768-dimension dot product against scalar loops, and
-      milliseconds per top-10 cosine query over 10,000 and 100,000 vectors
-      against a full scan and sort.
+      Nanoseconds per 768-dimension dot product against scalar loops, and millis
+      econds per top-10 cosine query over 10,000 and 100,000 vectors.
     path: doc/bench.png
 
 environment:
