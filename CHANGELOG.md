@@ -1,3 +1,18 @@
+## 0.2.0
+
+- Add `QuantizedMatrix`, an int8 form of `VectorMatrix` for corpora that no
+  longer fit comfortably in memory. Each row is scaled so its largest component
+  maps to 127 and stored as one byte per dimension. Measured on 5,000 rows of
+  768 dimensions: 14.6 MB becomes 3.7 MB, 3.92x smaller, while a search goes
+  from 0.63 ms to 2.50 ms a query, 3.96x the time, because the byte rows cannot
+  use the SIMD path the float rows do. It buys memory and costs throughput,
+  which is the trade to make only when the corpus is the problem.
+- `QuantizedMatrix.from` leaves the source matrix usable, so recall can be
+  measured against the exact ranking on real vectors. Recall@10 was 100% on the
+  benchmark corpus, but that is an upper bound: uniformly random vectors sit
+  far apart in high dimensions, and real embeddings cluster, which is where
+  eight bits start confusing neighbours.
+
 ## 0.1.1
 
 - Docs: tightened the README wording and visuals.

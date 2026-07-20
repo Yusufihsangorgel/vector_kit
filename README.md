@@ -126,6 +126,37 @@ that does not start on a 16-byte boundary is copied internally before
 the SIMD loop; `normalizeInPlace` still writes the result back to the
 original view.
 
+## int8 quantization
+
+When the vectors stop fitting comfortably in memory, `QuantizedMatrix` stores
+each row as one byte per dimension plus the scale that undoes it:
+
+```dart
+final matrix = VectorMatrix.fromRows(embeddings);
+final compact = QuantizedMatrix.from(matrix);
+
+final hits = compact.topKCosine(query, 10);
+```
+
+Measured on 5,000 rows of 768 dimensions, Apple M-series:
+
+| | float32 | int8 |
+|---|---|---|
+| memory | 14.6 MB | 3.7 MB (3.92x smaller) |
+| search | 0.63 ms/query | 2.50 ms/query (3.96x the time) |
+
+So this buys memory and costs throughput: the byte rows cannot go through the
+same SIMD path the float rows do. Reach for it when the corpus is the problem,
+not when the latency is.
+
+On the same corpus, recall@10 against the exact float32 ranking was 100%. Take
+that as an upper bound rather than a promise: those are uniformly random
+vectors, which sit far apart in 768 dimensions, so rounding rarely reorders
+them. Real embeddings cluster, and clustered neighbours are exactly the ones
+eight bits can confuse. `QuantizedMatrix.from` leaves the source matrix
+untouched precisely so you can measure recall on your own vectors before
+trusting it.
+
 ## Relation to rag_kit
 
 [rag_kit](https://github.com/Yusufihsangorgel/rag_kit) covers the
@@ -136,7 +167,6 @@ on; neither package depends on the other today.
 ## Planned
 
 - Approximate nearest neighbor search (HNSW).
-- int8 quantization for larger corpora.
 - Isolate-parallel search for very large matrices.
 
 These stay out until the exact-search core has settled.
