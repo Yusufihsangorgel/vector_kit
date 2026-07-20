@@ -1,3 +1,18 @@
+## 0.3.0
+
+- The matrix search methods take a plain `List<double>` query, not only a
+  `Float32List`. An embedding straight from a model is a `List<double>`, so
+  building the index with `fromRows` and then calling `topKCosine` used to
+  compile on the first line and fail on the second, which is exactly the kind of
+  seam a caller trips on. The widening is source-compatible: a `Float32List` is
+  a `List<double>`, so existing calls are unchanged. Applies to `topKCosine`,
+  `topKDot` and `topKEuclidean` on both `VectorMatrix` and `QuantizedMatrix`.
+- `example/semantic_search.dart` is the real use case: a 20,000-document index
+  of 384-dim vectors, searched, with the result measured. A top-5 query is
+  1.4 ms against 15.9 ms for the hand-written cosine loop (11x), and the int8
+  `QuantizedMatrix` holds the index in a quarter of the memory, with the recall
+  cost measured against the float ranking rather than assumed.
+
 ## 0.2.2
 
 - Shorten the screenshot description. pub.dev accepts up to 200 characters but

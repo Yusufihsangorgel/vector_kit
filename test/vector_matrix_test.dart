@@ -415,4 +415,38 @@ void main() {
       expect(() => VectorMatrix.fromBytes(bytes), throwsFormatException);
     });
   });
+
+  group('query accepts a plain List<double>', () {
+    test('topKCosine takes a List<double> query, not only Float32List', () {
+      // An embedding from a model is usually a List<double>; the search API
+      // must take it without the caller wrapping it in a Float32List.
+      final index = VectorMatrix.fromRows([
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+      ]);
+      final query = <double>[0.9, 0.1, 0.0];
+      final viaList = index.topKCosine(query, 1);
+      final viaTyped = index.topKCosine(Float32List.fromList(query), 1);
+      expect(viaList.single.$1, 0);
+      // The same answer whichever list type is passed.
+      expect(viaList.single.$2, closeTo(viaTyped.single.$2, 1e-6));
+    });
+
+    test('topKDot and topKEuclidean take a List<double> too', () {
+      final index = VectorMatrix.fromRows([
+        [1.0, 2.0],
+        [3.0, 4.0],
+      ]);
+      final query = <double>[1.0, 1.0];
+      expect(index.topKDot(query, 1).single.$1, 1);
+      expect(index.topKEuclidean(query, 1).single.$1, 0);
+    });
+
+    test('a wrong-length List<double> query is still rejected', () {
+      final index = VectorMatrix.fromRows([
+        [1.0, 0.0, 0.0],
+      ]);
+      expect(() => index.topKCosine(<double>[1.0, 0.0], 1), throwsArgumentError);
+    });
+  });
 }

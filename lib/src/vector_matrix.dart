@@ -217,6 +217,11 @@ class VectorMatrix {
   /// first. Scores are clamped to `[-1, 1]`, matching the top-level
   /// `cosineSimilarity` function.
   ///
+  /// [query] is any `List<double>`, so an embedding straight from a model
+  /// (which is usually a plain `List<double>`) can be passed without first
+  /// wrapping it in a `Float32List`. It is copied into aligned scratch, so a
+  /// `Float32List` is not faster here.
+  ///
   /// Each row costs one SIMD dot product because row norms are cached by
   /// [add]. Rows with zero norm have no cosine score and are skipped, so
   /// the result can hold fewer than [k] entries even when `rowCount >=
@@ -227,7 +232,7 @@ class VectorMatrix {
   /// have [dimension] components, contains a NaN or infinite component,
   /// is a zero vector, or has a squared norm that overflows single
   /// precision.
-  List<(int index, double score)> topKCosine(Float32List query, int k) {
+  List<(int index, double score)> topKCosine(List<double> query, int k) {
     _checkK(k);
     final lanes = _prepareQuery(query);
     final qn2 = dotLanes(lanes, 0, lanes, 0, _strideLanes);
@@ -275,7 +280,7 @@ class VectorMatrix {
   /// component. As with [dot], scores can reach infinity when finite
   /// inputs overflow single-precision accumulation; that needs
   /// magnitudes around 1e38, far beyond real embedding values.
-  List<(int index, double score)> topKDot(Float32List query, int k) {
+  List<(int index, double score)> topKDot(List<double> query, int k) {
     _checkK(k);
     final lanes = _prepareQuery(query);
     final heap = _TopKHeap(math.min(k, _count));
@@ -294,7 +299,7 @@ class VectorMatrix {
   /// Throws [ArgumentError] if [k] is not positive or if [query] does
   /// not have [dimension] components or contains a NaN or infinite
   /// component.
-  List<(int index, double score)> topKEuclidean(Float32List query, int k) {
+  List<(int index, double score)> topKEuclidean(List<double> query, int k) {
     _checkK(k);
     final lanes = _prepareQuery(query);
     final heap = _TopKHeap(math.min(k, _count));
@@ -343,7 +348,7 @@ class VectorMatrix {
 
   /// Validates [query] and copies it into padded, aligned scratch
   /// storage so the search loops can run without tails.
-  Float32x4List _prepareQuery(Float32List query) {
+  Float32x4List _prepareQuery(List<double> query) {
     if (query.length != dimension) {
       throw ArgumentError.value(
         query,
@@ -532,7 +537,7 @@ class QuantizedMatrix {
   /// [query] stays in full precision; only the stored rows are quantized.
   /// Throws [ArgumentError] if [k] is below 1, if [query] has the wrong
   /// length, or if [query] is a zero vector.
-  List<(int index, double score)> topKCosine(Float32List query, int k) {
+  List<(int index, double score)> topKCosine(List<double> query, int k) {
     _check(query, k);
     var qn2 = 0.0;
     for (var i = 0; i < dimension; i++) {
@@ -562,7 +567,7 @@ class QuantizedMatrix {
   }
 
   /// The [k] rows with the largest dot product against [query], best first.
-  List<(int index, double score)> topKDot(Float32List query, int k) {
+  List<(int index, double score)> topKDot(List<double> query, int k) {
     _check(query, k);
     final heap = _TopKHeap(math.min(k, _count));
     for (var r = 0; r < _count; r++) {
@@ -577,7 +582,7 @@ class QuantizedMatrix {
     return heap.drainDescending();
   }
 
-  void _check(Float32List query, int k) {
+  void _check(List<double> query, int k) {
     if (k < 1) {
       throw ArgumentError.value(k, 'k', 'must be at least 1');
     }

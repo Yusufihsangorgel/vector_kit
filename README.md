@@ -36,7 +36,16 @@ void main() {
 }
 ```
 
-A runnable version is in `example/vector_kit_example.dart`.
+The query is any `List<double>`, so an embedding straight from a model can be
+passed to `topKCosine`/`topKDot`/`topKEuclidean` without wrapping it in a
+`Float32List` first.
+
+`example/vector_kit_example.dart` is a short API tour;
+`example/semantic_search.dart` is the real job: it builds a 20,000-document
+index of 384-dim vectors, searches it, and measures the result. On an Apple
+Silicon MacBook a top-5 query takes 1.4 ms against 15.9 ms for the obvious
+hand-written cosine loop (11x), and the int8 `QuantizedMatrix` holds the same
+index in 7.6 MB against 29.3 MB with full recall on the demo's data.
 
 ## Measured performance
 
