@@ -541,7 +541,7 @@ class QuantizedMatrix {
   ///
   /// [query] stays in full precision; only the stored rows are quantized.
   /// Throws [ArgumentError] if [k] is below 1, if [query] has the wrong
-  /// length, or if [query] is a zero vector.
+  /// length, contains a NaN or infinite component, or is a zero vector.
   List<(int index, double score)> topKCosine(List<double> query, int k) {
     _check(query, k);
     var qn2 = 0.0;
@@ -572,6 +572,9 @@ class QuantizedMatrix {
   }
 
   /// The [k] rows with the largest dot product against [query], best first.
+  ///
+  /// Throws [ArgumentError] if [k] is below 1, if [query] has the wrong
+  /// length, or if [query] contains a NaN or infinite component.
   List<(int index, double score)> topKDot(List<double> query, int k) {
     _check(query, k);
     final heap = _TopKHeap(math.min(k, _count));
@@ -597,6 +600,15 @@ class QuantizedMatrix {
         'query',
         'must have $dimension components',
       );
+    }
+    for (var i = 0; i < query.length; i++) {
+      if (!query[i].isFinite) {
+        throw ArgumentError.value(
+          query[i],
+          'query',
+          'component $i is not finite',
+        );
+      }
     }
   }
 }

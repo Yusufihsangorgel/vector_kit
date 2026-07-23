@@ -1,3 +1,11 @@
+## 0.3.1
+
+- `QuantizedMatrix.topKCosine` and `topKDot` now reject a query with a NaN or
+  infinite component instead of returning a result list whose scores are all
+  NaN. `VectorMatrix` already validated this; `QuantizedMatrix` only checked
+  `k` and the query length, so the same bad query that throws on one matrix
+  type silently poisoned the ranking on the other.
+
 ## 0.3.0
 
 - The matrix search methods take a plain `List<double>` query, not only a

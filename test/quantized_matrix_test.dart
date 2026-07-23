@@ -115,4 +115,22 @@ void main() {
     // An all-zero query has no direction to compare against.
     expect(() => quantized.topKCosine(Float32List(8), 1), throwsArgumentError);
   });
+
+  test('rejects a NaN or infinite component in the query', () {
+    final quantized = QuantizedMatrix.from(_corpus(rows: 4, dimension: 8));
+    expect(
+      () => quantized.topKCosine(
+        Float32List.fromList([1, 2, 3, 4, double.nan, 6, 7, 8]),
+        1,
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => quantized.topKDot(
+        Float32List.fromList([double.infinity, 2, 3, 4, 5, 6, 7, 8]),
+        1,
+      ),
+      throwsArgumentError,
+    );
+  });
 }
