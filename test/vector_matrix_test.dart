@@ -446,7 +446,10 @@ void main() {
       final index = VectorMatrix.fromRows([
         [1.0, 0.0, 0.0],
       ]);
-      expect(() => index.topKCosine(<double>[1.0, 0.0], 1), throwsArgumentError);
+      expect(
+        () => index.topKCosine(<double>[1.0, 0.0], 1),
+        throwsArgumentError,
+      );
     });
   });
 }

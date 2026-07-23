@@ -40,10 +40,7 @@ void main() {
     var queries = 0;
     for (var s = 0; s < 40; s++) {
       final query = _query(matrix.dimension, seed: 1000 + s);
-      final exact = matrix
-          .topKCosine(query, k)
-          .map((e) => e.$1)
-          .toSet();
+      final exact = matrix.topKCosine(query, k).map((e) => e.$1).toSet();
       final approximate = quantized.topKCosine(query, k).map((e) => e.$1);
       hits += approximate.where(exact.contains).length;
       queries++;
@@ -85,9 +82,11 @@ void main() {
     final quantized = QuantizedMatrix.from(matrix);
     final query = _query(64, seed: 7);
     expect(
-      quantized.topKDot(query, 5).map((e) => e.$1).toSet().intersection(
-            matrix.topKDot(query, 5).map((e) => e.$1).toSet(),
-          ),
+      quantized
+          .topKDot(query, 5)
+          .map((e) => e.$1)
+          .toSet()
+          .intersection(matrix.topKDot(query, 5).map((e) => e.$1).toSet()),
       hasLength(greaterThanOrEqualTo(4)),
     );
   });
@@ -111,18 +110,9 @@ void main() {
 
   test('bad arguments are rejected', () {
     final quantized = QuantizedMatrix.from(_corpus(rows: 4, dimension: 8));
-    expect(
-      () => quantized.topKCosine(Float32List(8), 0),
-      throwsArgumentError,
-    );
-    expect(
-      () => quantized.topKCosine(Float32List(7), 1),
-      throwsArgumentError,
-    );
+    expect(() => quantized.topKCosine(Float32List(8), 0), throwsArgumentError);
+    expect(() => quantized.topKCosine(Float32List(7), 1), throwsArgumentError);
     // An all-zero query has no direction to compare against.
-    expect(
-      () => quantized.topKCosine(Float32List(8), 1),
-      throwsArgumentError,
-    );
+    expect(() => quantized.topKCosine(Float32List(8), 1), throwsArgumentError);
   });
 }

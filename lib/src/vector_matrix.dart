@@ -475,8 +475,13 @@ class _TopKHeap {
 /// not faster, because the byte rows cannot go through the same SIMD path the
 /// float rows do; this buys memory, not throughput.
 class QuantizedMatrix {
-  QuantizedMatrix._(this.dimension, this._count, this._data, this._scales,
-      this._norms);
+  QuantizedMatrix._(
+    this.dimension,
+    this._count,
+    this._data,
+    this._scales,
+    this._norms,
+  );
 
   /// Quantizes every row of [source].
   ///

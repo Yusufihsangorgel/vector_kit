@@ -37,8 +37,10 @@ void main() {
   // it in a Float32List: the search API takes either.
   final query = <double>[for (var i = 0; i < dimension; i++) rng.nextDouble()];
 
-  print('index: ${index.rowCount} docs of $dimension dims '
-      '(${(index.rowCount * dimension * 4 / 1024 / 1024).toStringAsFixed(1)} MB)\n');
+  print(
+    'index: ${index.rowCount} docs of $dimension dims '
+    '(${(index.rowCount * dimension * 4 / 1024 / 1024).toStringAsFixed(1)} MB)\n',
+  );
 
   print('top 5 by cosine similarity:');
   for (final (row, score) in index.topKCosine(query, 5)) {
@@ -57,8 +59,10 @@ void main() {
   final naive = _time(() => _naiveTopK(rows, query, 5));
   print('\ntop-5 over ${index.rowCount} rows:');
   print('  VectorMatrix     ${fast.toStringAsFixed(2)} ms');
-  print('  hand-written     ${naive.toStringAsFixed(2)} ms  '
-      '(${(naive / fast).toStringAsFixed(1)}x slower)');
+  print(
+    '  hand-written     ${naive.toStringAsFixed(2)} ms  '
+    '(${(naive / fast).toStringAsFixed(1)}x slower)',
+  );
 
   // The int8 quantized index: a quarter of the bytes, and how much recall that
   // costs, measured against the float ranking rather than assumed.
@@ -66,10 +70,12 @@ void main() {
   final exact = index.topKCosine(query, 10).map((e) => e.$1).toSet();
   final approx = quantized.topKCosine(query, 10).map((e) => e.$1).toSet();
   final recall = exact.intersection(approx).length / exact.length;
-  print('\nint8 quantized index: '
-      '${(quantized.byteSize / 1024 / 1024).toStringAsFixed(1)} MB '
-      'against ${(index.rowCount * dimension * 4 / 1024 / 1024).toStringAsFixed(1)} MB, '
-      'recall@10 ${(recall * 100).toStringAsFixed(0)}%');
+  print(
+    '\nint8 quantized index: '
+    '${(quantized.byteSize / 1024 / 1024).toStringAsFixed(1)} MB '
+    'against ${(index.rowCount * dimension * 4 / 1024 / 1024).toStringAsFixed(1)} MB, '
+    'recall@10 ${(recall * 100).toStringAsFixed(0)}%',
+  );
 }
 
 /// A unit-ish random embedding.
@@ -83,7 +89,11 @@ Float32List _fakeEmbedding(int dimension, Random rng) {
 
 /// The version someone writes before reaching for a package: cosine against
 /// every row with a nested-list loop.
-List<(int, double)> _naiveTopK(List<List<double>> rows, List<double> query, int k) {
+List<(int, double)> _naiveTopK(
+  List<List<double>> rows,
+  List<double> query,
+  int k,
+) {
   double norm(List<double> v) {
     var s = 0.0;
     for (final x in v) {
