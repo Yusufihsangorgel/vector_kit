@@ -1,3 +1,15 @@
+## 0.4.0
+
+- Mark `VectorMatrix` and `QuantizedMatrix` as `final`, ahead of a 1.0.0
+  freeze. Neither was designed to be subtyped: they are concrete data
+  structures, cheap to construct, and nothing in the package, its tests, its
+  examples or its benchmarks extends or implements either. Sealing them keeps
+  the rest of 1.x additive, because the planned work (the `QuantizedMatrix`
+  parity gaps, an ANN index) adds members to exactly these types, and every
+  addition would otherwise break anyone who had implemented them. Adding
+  `final` after 1.0.0 would require a major version; removing it later would
+  not, so this is the direction that stays open. No behaviour change.
+
 ## 0.3.1
 
 - `QuantizedMatrix.topKCosine` and `topKDot` now reject a query with a NaN or

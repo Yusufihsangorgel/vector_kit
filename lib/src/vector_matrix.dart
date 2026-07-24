@@ -15,7 +15,7 @@ import 'simd.dart';
 ///
 /// L2 norms are computed once per row in [add] and cached, so
 /// [topKCosine] costs one SIMD dot product per row.
-class VectorMatrix {
+final class VectorMatrix {
   /// Creates an empty matrix whose rows all have [dimension] components.
   ///
   /// Throws [ArgumentError] if [dimension] is not positive.
@@ -474,7 +474,7 @@ class _TopKHeap {
 /// untouched so the two can be compared directly. Search is also slower here,
 /// not faster, because the byte rows cannot go through the same SIMD path the
 /// float rows do; this buys memory, not throughput.
-class QuantizedMatrix {
+final class QuantizedMatrix {
   QuantizedMatrix._(
     this.dimension,
     this._count,
