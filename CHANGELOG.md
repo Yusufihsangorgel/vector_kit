@@ -1,3 +1,10 @@
+## 1.0.2
+
+- Add `example/README.md` for pub.dev's Example tab (it was empty). It walks
+  through the core example — pairwise ops, top-k cosine search, and the binary
+  round-trip — with its real output, and points at `semantic_search.dart` for
+  the realistic-size version. Docs only.
+
 ## 1.0.1
 
 - Add `benchmark/quantization_benchmark.dart` and a chart of what int8
