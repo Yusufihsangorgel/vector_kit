@@ -1,0 +1,221 @@
+{
+  "width": 1080,
+  "height": 560,
+  "ops": [
+    {
+      "k": "text",
+      "x": 540,
+      "y": 34,
+      "anchor": "middle",
+      "size": 21,
+      "ink": true,
+      "s": "int8 quantization: a quarter of the memory, almost all of the recall"
+    },
+    {
+      "k": "text",
+      "x": 540,
+      "y": 64,
+      "anchor": "middle",
+      "size": 14,
+      "s": "5,000 vectors x 768 dims, cosine top-10, 200 queries"
+    },
+    {
+      "k": "text",
+      "x": 250,
+      "y": 104,
+      "anchor": "middle",
+      "size": 15,
+      "ink": true,
+      "s": "memory"
+    },
+    {
+      "k": "line",
+      "x1": 120,
+      "y1": 320,
+      "x2": 400,
+      "y2": 320,
+      "color": "slate"
+    },
+    {
+      "k": "rect",
+      "x": 150,
+      "y": 138,
+      "w": 90,
+      "h": 182,
+      "color": "amber",
+      "fill": true
+    },
+    {
+      "k": "text",
+      "x": 195,
+      "y": 126,
+      "anchor": "middle",
+      "size": 14,
+      "ink": true,
+      "s": "14.6 MB"
+    },
+    {
+      "k": "text",
+      "x": 195,
+      "y": 340,
+      "anchor": "middle",
+      "size": 13,
+      "s": "float32"
+    },
+    {
+      "k": "rect",
+      "x": 290,
+      "y": 274,
+      "w": 90,
+      "h": 46,
+      "color": "green",
+      "fill": true
+    },
+    {
+      "k": "text",
+      "x": 335,
+      "y": 260,
+      "anchor": "middle",
+      "size": 14,
+      "ink": true,
+      "s": "3.7 MB"
+    },
+    {
+      "k": "text",
+      "x": 335,
+      "y": 340,
+      "anchor": "middle",
+      "size": 13,
+      "s": "int8"
+    },
+    {
+      "k": "text",
+      "x": 250,
+      "y": 372,
+      "anchor": "middle",
+      "size": 14,
+      "ink": true,
+      "color": "green",
+      "s": "3.9x smaller"
+    },
+    {
+      "k": "text",
+      "x": 760,
+      "y": 104,
+      "anchor": "middle",
+      "size": 15,
+      "ink": true,
+      "s": "what you keep, what you pay"
+    },
+    {
+      "k": "rect",
+      "x": 560,
+      "y": 132,
+      "w": 400,
+      "h": 70,
+      "color": "green"
+    },
+    {
+      "k": "text",
+      "x": 585,
+      "y": 162,
+      "size": 30,
+      "ink": true,
+      "color": "green",
+      "s": "99.3%"
+    },
+    {
+      "k": "text",
+      "x": 700,
+      "y": 155,
+      "size": 14,
+      "ink": true,
+      "s": "of the float top-10"
+    },
+    {
+      "k": "text",
+      "x": 700,
+      "y": 175,
+      "size": 14,
+      "ink": true,
+      "s": "survives quantization"
+    },
+    {
+      "k": "rect",
+      "x": 560,
+      "y": 224,
+      "w": 400,
+      "h": 70,
+      "color": "red"
+    },
+    {
+      "k": "text",
+      "x": 585,
+      "y": 254,
+      "size": 30,
+      "ink": true,
+      "color": "red",
+      "s": "4.1x"
+    },
+    {
+      "k": "text",
+      "x": 700,
+      "y": 247,
+      "size": 14,
+      "ink": true,
+      "s": "slower to search:"
+    },
+    {
+      "k": "text",
+      "x": 700,
+      "y": 267,
+      "size": 14,
+      "ink": true,
+      "s": "664 -> 2723 us/query"
+    },
+    {
+      "k": "text",
+      "x": 760,
+      "y": 336,
+      "anchor": "middle",
+      "size": 13,
+      "color": "slate",
+      "s": "the int8 rows can't take the SIMD float path,"
+    },
+    {
+      "k": "text",
+      "x": 760,
+      "y": 354,
+      "anchor": "middle",
+      "size": 13,
+      "color": "slate",
+      "s": "so this buys memory, not throughput"
+    },
+    {
+      "k": "text",
+      "x": 540,
+      "y": 430,
+      "anchor": "middle",
+      "size": 15,
+      "ink": true,
+      "s": "Reach for it when the float matrix does not fit in memory, not when search is slow."
+    },
+    {
+      "k": "text",
+      "x": 540,
+      "y": 462,
+      "anchor": "middle",
+      "size": 14,
+      "s": "The original matrix stays untouched, so you can measure recall on your own vectors before trusting it."
+    },
+    {
+      "k": "text",
+      "x": 540,
+      "y": 500,
+      "anchor": "middle",
+      "size": 13,
+      "color": "slate",
+      "s": "benchmark/quantization_benchmark.dart, seeded, on an Apple M-series core"
+    }
+  ]
+}

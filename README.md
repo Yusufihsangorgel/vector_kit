@@ -147,24 +147,26 @@ final compact = QuantizedMatrix.from(matrix);
 final hits = compact.topKCosine(query, 10);
 ```
 
-Measured on 5,000 rows of 768 dimensions, Apple M-series:
+![int8 quantization on 5,000 vectors of 768 dimensions: memory drops from 14.6 MB to 3.7 MB, 3.9 times smaller; 99.3% of the float top-10 survives quantization; search is 4.1 times slower, 664 to 2723 microseconds per query, because the int8 rows cannot take the SIMD float path, so this buys memory not throughput.](https://raw.githubusercontent.com/Yusufihsangorgel/vector_kit/main/doc/quantization.png)
+
+`benchmark/quantization_benchmark.dart`, seeded, on an Apple M-series core:
 
 | | float32 | int8 |
 |---|---|---|
-| memory | 14.6 MB | 3.7 MB (3.92x smaller) |
-| search | 0.63 ms/query | 2.50 ms/query (3.96x the time) |
+| memory | 14.6 MB | 3.7 MB (3.9x smaller) |
+| search | 664 µs/query | 2723 µs/query (4.1x the time) |
+| recall@10 | — | 99.3% of the float top-10 |
 
 So this buys memory and costs throughput: the byte rows cannot go through the
 same SIMD path the float rows do. Reach for it when the corpus is the problem,
 not when the latency is.
 
-On the same corpus, recall@10 against the exact float32 ranking was 100%. Take
-that as an upper bound rather than a promise: those are uniformly random
-vectors, which sit far apart in 768 dimensions, so rounding rarely reorders
-them. Real embeddings cluster, and clustered neighbours are exactly the ones
-eight bits can confuse. `QuantizedMatrix.from` leaves the source matrix
-untouched precisely so you can measure recall on your own vectors before
-trusting it.
+Take that recall as an upper bound rather than a promise: those are uniformly
+random vectors, which sit far apart in 768 dimensions, so rounding rarely
+reorders them, and packing more vectors into the same space lowers it. Real
+embeddings cluster, and clustered neighbours are exactly the ones eight bits
+can confuse. `QuantizedMatrix.from` leaves the source matrix untouched
+precisely so you can measure recall on your own vectors before trusting it.
 
 ## Relation to rag_kit
 

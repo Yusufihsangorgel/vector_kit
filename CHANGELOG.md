@@ -1,3 +1,13 @@
+## 1.0.1
+
+- Add `benchmark/quantization_benchmark.dart` and a chart of what int8
+  quantization actually buys, measured on the same vectors: on 5,000 rows of
+  768 dimensions it holds the corpus in 3.7 MB instead of 14.6 MB (3.9x
+  smaller) and keeps 99.3% of the float top-10, while search runs 4.1x slower
+  because the byte rows cannot take the SIMD float path. The benchmark is
+  seeded, so the memory and recall figures reproduce exactly; the README's
+  numbers now come from it. Docs and benchmark only; no code change.
+
 ## 1.0.0
 
 First stable release. The public API is frozen: a breaking change will not
