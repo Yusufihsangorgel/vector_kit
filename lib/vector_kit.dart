@@ -12,5 +12,6 @@
 /// scores.
 library;
 
-export 'src/ops.dart';
-export 'src/vector_matrix.dart';
+export 'src/ops.dart'
+    show cosineSimilarity, dot, euclideanDistance, normalized, normalizeInPlace;
+export 'src/vector_matrix.dart' show QuantizedMatrix, VectorMatrix;

@@ -1,6 +1,6 @@
 name: vector_kit
 description: "SIMD-accelerated vector math for embeddings: dot product, cosine similarity, normalization, and top-k search over packed matrices."
-version: 0.4.0
+version: 1.0.0
 repository: https://github.com/Yusufihsangorgel/vector_kit
 issue_tracker: https://github.com/Yusufihsangorgel/vector_kit/issues
 documentation: https://github.com/Yusufihsangorgel/vector_kit#readme

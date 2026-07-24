@@ -1,3 +1,25 @@
+## 1.0.0
+
+First stable release. The public API is frozen: a breaking change will not
+land without a major-version bump.
+
+- Name both exports with `show` clauses, so a future symbol added to `ops.dart`
+  or `vector_matrix.dart` cannot join the API by accident. The exported set is
+  unchanged: the five free functions (`cosineSimilarity`, `dot`,
+  `euclideanDistance`, `normalized`, `normalizeInPlace`) and the two classes
+  (`VectorMatrix`, `QuantizedMatrix`, already `final` since 0.4.0).
+
+The freeze follows an adversarial pass that ran the code against its failure
+modes rather than reading them. Every one is handled with a clear
+`ArgumentError` or `FormatException`, never a NaN leaking into a score, a
+hang, or silent corruption: a zero vector in cosine similarity, a NaN or
+infinite component, a length mismatch, `k` at or below zero, an empty matrix,
+a `topK` larger than the row count, a query in the wrong dimension, a
+dimension-zero matrix, truncated / empty / bad-magic bytes in `fromBytes`, a
+quantized search over an empty matrix or one with a zero row, and a row whose
+squared norm overflows single precision. The `Float32List`-only surface has no
+async, so there is no timer or zone for a failure to escape into.
+
 ## 0.4.0
 
 - Mark `VectorMatrix` and `QuantizedMatrix` as `final`, ahead of a 1.0.0
