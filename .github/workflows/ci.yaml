@@ -21,11 +21,17 @@ jobs:
       - name: Test
         run: dart test
 
-      # The package advertises platform:web and is:wasm-ready. Until this step
-      # existed nothing checked either, and a 63x web slowdown shipped unnoticed
-      # (Float32x4 is emulated off native — see doc/web-performance.md).
-      - name: Test on Chrome
+      # The package advertises platform:web and is:wasm-ready. Until these steps
+      # existed nothing checked either, and a 15x (dart2js) to 41x (dart2wasm)
+      # slowdown shipped unnoticed because Float32x4 is emulated off the VM.
+      # Since 1.1.0 the kernels are platform-conditional, so these runs also
+      # guard against the two paths drifting apart: cross_platform_test.dart
+      # pins the exact top-k rows and fails if any target ranks differently.
+      - name: Test on Chrome (dart2js)
         run: dart test -p chrome
+
+      - name: Test on Chrome (dart2wasm)
+        run: dart test -p chrome -c dart2wasm
 
       - name: Compile to wasm
         run: dart compile wasm example/semantic_search.dart -o /tmp/vk.wasm

@@ -2,17 +2,17 @@
 
 # vector_kit
 
-> **On the web, measure before you depend on this.** The inner loops use
-> `Float32x4`, which is real SIMD only on the Dart VM; off it the type is
-> emulated and the emulation is slower than a plain loop. Measured on
-> 1000×384: **79 µs per query natively, 4,794 µs on Chrome**. See
-> [doc/web-performance.md](https://github.com/Yusufihsangorgel/vector_kit/blob/main/doc/web-performance.md)
-> for the numbers, the cause, and the fix.
+> **Web users: upgrade to 1.1.0.** Up to 1.0.4 the inner loops used `Float32x4`
+> everywhere, and off the Dart VM that type is emulated rather than compiled to
+> vector instructions — slower than using no SIMD at all. 1.1.0 keeps SIMD on
+> the VM and dispatches to scalar kernels elsewhere. Measured on 1000×384,
+> `topKCosine`: **dart2js 4,780 µs → 322 µs, dart2wasm 12,102 µs → 292 µs,
+> native unchanged at 77 µs.** No API change.
 >
-> CI runs the Chrome suite and a wasm compile on every push, so the web target
-> cannot break unnoticed. It does not assert timings: CI runners vary too much
-> for a threshold to mean anything, so the benchmark prints rather than fails.
-> Slowness is caught by running it, not by CI.
+> Web results now accumulate in double instead of float32, so scores differ from
+> the VM by around 5e-9. Ranking does not: CI pins the exact top-10 for cosine,
+> dot and euclidean and runs it on all three targets. See
+> [doc/web-performance.md](https://github.com/Yusufihsangorgel/vector_kit/blob/main/doc/web-performance.md).
 
 
 SIMD-accelerated vector math for embeddings: dot product, cosine

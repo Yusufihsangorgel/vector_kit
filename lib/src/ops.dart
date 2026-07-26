@@ -37,11 +37,14 @@ Never _throwNonFinite(Float32List original, Float32List aligned, String name) {
 
 /// Returns the dot product of [a] and [b].
 ///
-/// The inner loop processes four components per step with [Float32x4]
-/// and keeps four independent accumulators; the last `length % 4`
-/// components are added with scalar arithmetic. Accumulation is single
-/// precision, so the result can differ from an exact double-precision
-/// sum by a small amount that grows with vector length.
+/// On the Dart VM the inner loop processes four components per step with
+/// `Float32x4` and keeps four independent accumulators, adding the last
+/// `length % 4` components with scalar arithmetic; accumulation is single
+/// precision, so the result can differ from an exact double-precision sum
+/// by a small amount that grows with vector length. Off the VM it is a
+/// plain scalar loop accumulating in double, which lands closer to the
+/// exact sum. See `doc/web-performance.md` for why and for the measured
+/// size of the difference.
 ///
 /// The finiteness check costs nothing on the fast path: a NaN or
 /// infinite component always drives the accumulated sum non-finite

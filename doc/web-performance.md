@@ -1,85 +1,88 @@
 # What this package costs on the web
 
-`vector_kit` is fast on the Dart VM because its inner loops use `Float32x4`,
-which compiles to real SIMD instructions there. Off the native VM that type is
-emulated, and the emulation is slower than not using SIMD at all.
+Short version: as of 1.1.0 it costs about what a hand-written loop costs. Before
+1.1.0 it cost 15 to 41 times more, and this document exists because that shipped
+for weeks behind a `platform:web` badge that nothing tested.
 
-The package declares `platform:web`, so here is the size of that, measured
-rather than estimated. Reproduce it yourself:
+## The problem
+
+`vector_kit`'s inner loops were written around `Float32x4`, which is a real SIMD
+type only on the Dart VM. Off the VM the SDK emulates it: dart2js backs it with
+four boxed doubles and allocates a fresh object on every lane read and every
+arithmetic operation, and dart2wasm's own patch file names its version
+`NaiveFloat32x4` with a `TODO` to implement real Wasm SIMD later.
+
+Emulated SIMD is slower than doing no SIMD at all. So 1.1.0 keeps the SIMD
+kernels for the VM and dispatches to plain scalar kernels everywhere else, using
+a conditional import on `dart.library.js_interop`. Nothing in the public API
+changed.
+
+## Measured
+
+Apple M-series, Dart 3.11, 1000 rows × 384 dimensions, `topKCosine`, k=10.
+Minimum of several process runs per cell; the spread inside each was under 2%.
+Reproduce it:
 
 ```
 dart test test/platform_cost_test.dart -t bench
 dart test test/platform_cost_test.dart -t bench -p chrome
+dart test test/platform_cost_test.dart -t bench -p chrome -c dart2wasm
 ```
 
-Apple M-series, Dart 3.11, 1000 rows × 384 dimensions, 200 queries after warmup:
+| | 1.0.4 | 1.1.0 | |
+|---|---:|---:|---|
+| native VM | 79 µs | **77 µs** | unchanged, still SIMD |
+| Chrome, dart2js | 4,780 µs | **322 µs** | 14.8× faster |
+| Chrome, dart2wasm | 12,102 µs | **292 µs** | 41.4× faster |
 
-| | native VM | Chrome (dart2js) |
-|---|---:|---:|
-| `topKCosine`, 1000×384 | **79 µs** | **4,794 µs** |
+The third benchmark in that file is the honest yardstick: the same search
+written by hand with no package at all, one packed `Float32List`, cached row
+norms, a k-sized insertion top-k. It costs 257 µs native, 258 µs on dart2js and
+272 µs on dart2wasm — a plain loop is close to platform-neutral. Against it:
 
-That is a factor of 60 on the operation the package exists for.
+| | 1.0.4 | 1.1.0 |
+|---|---|---|
+| native VM | 3.3× faster than the loop | **3.3× faster** |
+| dart2js | 18× slower | **1.25× slower** |
+| dart2wasm | 45× slower | **1.08× slower** |
 
-## Why
+So on the web the package no longer costs you anything meaningful against
+writing it yourself, and you keep the API, the persistence and the int8 path.
+It is still the VM where the SIMD earns its keep.
 
-The second benchmark in that file isolates it: the same dot product written two
-ways, over the same data.
+## The one behavioural difference
 
-| | SIMD (`Float32x4`) | plain loop (`Float32List`) | ratio |
-|---|---:|---:|---:|
-| native VM | 117 µs | 260 µs | SIMD **2.2× faster** |
-| Chrome | 3,490 µs | 315 µs | SIMD **11× slower** |
+The VM kernels accumulate in float32, because that is what their vector
+registers hold. The scalar kernels accumulate in double, because reading a
+`Float32List` element already widens it and narrowing the running sum again
+would mean rounding through memory on every step — which would cost more than
+the emulation this change exists to avoid.
 
-Read the scalar column across rows: 260 µs native, 315 µs on Chrome. A plain
-loop is close to platform-neutral. The whole gap is the emulated SIMD, which is
-the one thing the package leans on.
+That makes web results slightly different from VM results, and slightly more
+accurate. Measured on the corpus in `test/cross_platform_test.dart`: the top
+cosine score is `0.1738678079298492` on the VM and `0.17386781263674544` on
+both web backends, a difference of **4.7e-9**.
 
-That second table is a kernel microbenchmark, though, and a kernel is not a
-search. It dot-products one cache-resident pair of vectors over and over: no
-streaming memory traffic, no per-row divide, no top-k to maintain. So the third
-benchmark measures the thing you would actually write instead of taking this
-dependency, over the same 1000×384 corpus as the first one: one packed
-`Float32List`, cached row norms, a k-sized insertion top-k, no SIMD anywhere.
+**Ranking is unaffected, and that is asserted rather than assumed.**
+`test/cross_platform_test.dart` pins the exact top-10 row indices for cosine,
+dot and euclidean, produced on the VM, and CI runs it on the VM, dart2js and
+dart2wasm. All three return the same rows in the same order. If a future change
+makes them diverge, the suite fails.
 
-| | native VM | Chrome (dart2js) | ratio |
-|---|---:|---:|---:|
-| `topKCosine` (this package) | 79 µs | 4,794 µs | **61×** |
-| hand-written scalar scan | **257 µs** | **260 µs** | **1.01×** |
+One consequence worth naming: a sum too large for float32 arrives at the caller
+as infinity on the VM, and `VectorMatrix.add` reports it as an overflow. A
+double accumulator would carry that same sum finitely and let the row through,
+so the scalar kernels fold out-of-range totals back to infinity. Without that,
+the *error contract* and not merely the number would differ by platform. There
+is a test for it.
 
-Minimum of six native runs and four Chrome runs; the spread inside each was
-under 2%. Both platforms print the same top hit, so the two columns did the
-same work rather than merely taking the same time.
+## What CI guards
 
-The hand-written scan is platform-neutral to within one percent. That is the
-cleanest statement of the problem: on the native VM this package is 3.3x faster
-than the loop it replaces, and on Chrome it is 18x slower than that same loop.
+Every push runs the full suite on the VM, on Chrome via dart2js, and on Chrome
+via dart2wasm, plus a wasm compile. So the web target cannot break unnoticed and
+the three platforms cannot silently start ranking differently.
 
-## What this means for you
-
-- **Server or mobile (Dart VM, AOT):** use it as documented. SIMD is doing what
-  it is there for.
-- **Flutter web or any dart2js/wasm target:** at a few thousand rows a plain
-  loop over `Float32List` will beat this package today. Do not add the
-  dependency for speed on the web; add it for the API or the int8 quantization
-  if those help you, and measure your own case.
-
-## Fixing it
-
-The fix is a conditional kernel: keep the SIMD path on native, dispatch to a
-scalar path off it, chosen with `if (dart.library.js_interop)` at import time.
-The measurement above says the scalar path lands near 315 µs on Chrome, so the
-expected result is roughly an 11× web improvement with native untouched.
-
-The storage layout does not have to change — rows already live in one
-`Float32List` and `Float32x4List` is only a view over it — so this is contained
-to `lib/src/simd.dart` and its call sites.
-
-Tracked, not done. This document exists because the gap was shipped for weeks
-behind a `platform:web` badge that nothing tested.
-
-CI now runs the Chrome suite and a wasm compile on every push, which means the
-web target can no longer break without anyone noticing. Be clear about what that
-does not cover: the benchmark above asserts nothing about time, because CI
-runners vary too much for any threshold to be meaningful. It prints. A
-regression from 4,794 µs to 50,000 µs would leave CI green. The guard is against
-breakage; the numbers are a measurement you have to take.
+CI does **not** assert timings: runners vary too much for a threshold to mean
+anything, so the benchmark prints rather than fails. A regression from 322 µs
+back to 4,800 µs would leave CI green. The guard is against breakage and
+divergence; the numbers above are a measurement you have to take.

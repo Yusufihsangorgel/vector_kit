@@ -8,10 +8,11 @@ import 'simd.dart';
 ///
 /// Rows are stored back to back in one [Float32List], padded to a
 /// multiple of four components so that every row starts on a 16-byte
-/// boundary. That lets the search loops read the whole matrix through a
-/// single [Float32x4List] view with no per-row alignment checks and no
-/// scalar tails. The padding is internal; [rowAt], [toBytes], and
-/// [dimension] only ever expose the logical row.
+/// boundary. On the Dart VM that lets the search loops read the whole
+/// matrix through a single `Float32x4List` view with no per-row alignment
+/// checks and no scalar tails; off the VM the same padding just removes
+/// the tails from a scalar loop. The padding is internal; [rowAt],
+/// [toBytes], and [dimension] only ever expose the logical row.
 ///
 /// L2 norms are computed once per row in [add] and cached, so
 /// [topKCosine] costs one SIMD dot product per row.
@@ -146,7 +147,7 @@ final class VectorMatrix {
 
   final int _strideLanes;
   late Float32List _data;
-  late Float32x4List _lanes;
+  late Lanes _lanes;
   late Float64List _norms;
   int _capacity = 0;
   int _count = 0;
@@ -348,7 +349,7 @@ final class VectorMatrix {
 
   /// Validates [query] and copies it into padded, aligned scratch
   /// storage so the search loops can run without tails.
-  Float32x4List _prepareQuery(List<double> query) {
+  Lanes _prepareQuery(List<double> query) {
     if (query.length != dimension) {
       throw ArgumentError.value(
         query,

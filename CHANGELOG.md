@@ -1,3 +1,41 @@
+## 1.1.0
+
+- **The web is 15x to 41x faster.** The inner loops were written around
+  `Float32x4`, which is a real SIMD type only on the Dart VM. Off it the SDK
+  emulates it with four boxed doubles, allocating on every lane read and every
+  arithmetic operation, and that emulation is slower than doing no SIMD at all.
+  The kernels are now selected by a conditional import: SIMD on the VM, plain
+  scalar loops everywhere else. Measured on 1000x384, `topKCosine`:
+
+  | | 1.0.4 | 1.1.0 |
+  |---|---|---|
+  | native VM | 79 us | 77 us (unchanged) |
+  | Chrome, dart2js | 4,780 us | **322 us** |
+  | Chrome, dart2wasm | 12,102 us | **292 us** |
+
+  Against the same search written by hand with no package at all (257 us
+  native, 258 us dart2js, 272 us dart2wasm), the package goes from 18x and 45x
+  slower on the two web backends to 1.25x and 1.08x, and stays 3.3x faster on
+  the VM. No public API changed.
+
+- **One behavioural difference, and it is measured rather than assumed.** The
+  VM kernels accumulate in float32 because that is what their vector registers
+  hold; the scalar kernels accumulate in double, because narrowing the running
+  sum would mean rounding through memory on every step. Web scores therefore
+  differ from VM scores by about 5e-9, and are slightly closer to exact.
+  **Ranking is unaffected.** The new `test/cross_platform_test.dart` pins the
+  exact top-10 rows for cosine, dot and euclidean, and CI now runs the suite on
+  the VM, dart2js and dart2wasm, so a divergence fails the build.
+
+- A sum too large for float32 arrives as infinity on the VM and is reported by
+  `VectorMatrix.add` as an overflow. A double accumulator would carry it
+  finitely and let the row through, so the scalar kernels fold out-of-range
+  totals back to infinity: the error contract, not just the number, stays the
+  same on every platform. Covered by a test.
+
+- CI gains a `dart test -p chrome -c dart2wasm` step alongside the existing
+  dart2js run and wasm compile.
+
 ## 1.0.4
 
 - Ship the hand-written baseline benchmark and its numbers. 1.0.3 was published
