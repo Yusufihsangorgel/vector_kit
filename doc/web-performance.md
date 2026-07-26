@@ -34,6 +34,26 @@ Read the scalar column across rows: 260 µs native, 315 µs on Chrome. A plain
 loop is close to platform-neutral. The whole gap is the emulated SIMD, which is
 the one thing the package leans on.
 
+That second table is a kernel microbenchmark, though, and a kernel is not a
+search. It dot-products one cache-resident pair of vectors over and over: no
+streaming memory traffic, no per-row divide, no top-k to maintain. So the third
+benchmark measures the thing you would actually write instead of taking this
+dependency, over the same 1000×384 corpus as the first one: one packed
+`Float32List`, cached row norms, a k-sized insertion top-k, no SIMD anywhere.
+
+| | native VM | Chrome (dart2js) | ratio |
+|---|---:|---:|---:|
+| `topKCosine` (this package) | 79 µs | 4,794 µs | **61×** |
+| hand-written scalar scan | **257 µs** | **260 µs** | **1.01×** |
+
+Minimum of six native runs and four Chrome runs; the spread inside each was
+under 2%. Both platforms print the same top hit, so the two columns did the
+same work rather than merely taking the same time.
+
+The hand-written scan is platform-neutral to within one percent. That is the
+cleanest statement of the problem: on the native VM this package is 3.3x faster
+than the loop it replaces, and on Chrome it is 18x slower than that same loop.
+
 ## What this means for you
 
 - **Server or mobile (Dart VM, AOT):** use it as documented. SIMD is doing what
