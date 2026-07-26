@@ -108,6 +108,23 @@ void main() {
     expect(matrix.rowAt(0).toList(), before);
   });
 
+  test('cosine stays inside [-1, 1]', () {
+    // The norm cached per row is the norm of what is stored, not of the row it
+    // came from. Taking it from the original instead pushes scores past 1, and
+    // topKCosine here has no clamp to hide it: measured at 1.0010 with a
+    // 20-row corpus when the norm is computed from the source row.
+    final matrix = _corpus();
+    final quantized = QuantizedMatrix.from(matrix);
+
+    for (var r = 0; r < matrix.rowCount; r++) {
+      final query = matrix.rowAt(r).toList();
+      for (final (_, score) in quantized.topKCosine(query, 3)) {
+        expect(score, lessThanOrEqualTo(1.0));
+        expect(score, greaterThanOrEqualTo(-1.0));
+      }
+    }
+  });
+
   test('bad arguments are rejected', () {
     final quantized = QuantizedMatrix.from(_corpus(rows: 4, dimension: 8));
     expect(() => quantized.topKCosine(Float32List(8), 0), throwsArgumentError);
