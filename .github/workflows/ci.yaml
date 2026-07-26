@@ -20,3 +20,12 @@ jobs:
         run: dart analyze --fatal-infos
       - name: Test
         run: dart test
+
+      # The package advertises platform:web and is:wasm-ready. Until this step
+      # existed nothing checked either, and a 63x web slowdown shipped unnoticed
+      # (Float32x4 is emulated off native — see doc/web-performance.md).
+      - name: Test on Chrome
+        run: dart test -p chrome
+
+      - name: Compile to wasm
+        run: dart compile wasm example/semantic_search.dart -o /tmp/vk.wasm

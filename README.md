@@ -2,6 +2,15 @@
 
 # vector_kit
 
+> **On the web, measure before you depend on this.** The inner loops use
+> `Float32x4`, which is real SIMD only on the Dart VM; off it the type is
+> emulated and the emulation is slower than a plain loop. Measured on
+> 1000×384: **79 µs per query natively, 4,794 µs on Chrome**. See
+> [doc/web-performance.md](doc/web-performance.md) for the numbers, the cause,
+> and the fix. CI now runs the Chrome suite and a wasm compile so the gap
+> cannot drift again.
+
+
 SIMD-accelerated vector math for embeddings: dot product, cosine
 similarity, normalization, and top-k search over packed matrices.
 
