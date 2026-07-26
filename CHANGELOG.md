@@ -1,3 +1,22 @@
+## 1.0.4
+
+- Ship the hand-written baseline benchmark and its numbers. 1.0.3 was published
+  about twenty minutes before that work landed, so the archive on pub.dev
+  carried a `platform_cost_test.dart` with only two tests and a
+  `doc/web-performance.md` whose "a plain loop is close to platform-neutral"
+  line rested on a kernel microbenchmark: one cache-resident pair of vectors,
+  no streaming memory traffic, no per-row divide, no top-k. That is not a
+  search, and quoting it as one overstated how the hand-written alternative
+  does.
+- The third benchmark measures the real thing over the same 1000x384 corpus:
+  one packed `Float32List`, cached row norms, a k-sized insertion top-k, no
+  SIMD. Minimum of six native runs and four Chrome runs, spread under 2% inside
+  each, both platforms printing the same top hit: **257 us native, 260 us on
+  Chrome**. Which puts the trade in one line: this package is 3.3x faster than
+  that loop on the native VM and 18x slower than it on Chrome.
+
+No library code changed in this release. `lib/` is byte-identical to 1.0.3.
+
 ## 1.0.3
 
 - Document what this package costs on the web, and test that target in CI. The
