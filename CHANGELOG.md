@@ -1,3 +1,19 @@
+## 1.0.3
+
+- Document what this package costs on the web, and test that target in CI. The
+  inner loops use `Float32x4`, which is real SIMD only on the Dart VM; off it
+  the type is emulated and the emulation is slower than a plain loop. Measured
+  on 1000x384: 79 us per query natively against 4,794 us on Chrome. The package
+  has declared `platform:web` since 1.0.0 with nothing exercising it, so the
+  warning is now at the top of the README and `doc/web-performance.md` carries
+  the numbers, the cause, and the shape of the fix.
+- CI now runs `dart test -p chrome` and `dart compile wasm` on every push, so
+  the web target cannot break unnoticed. It does not assert timings; runners
+  vary too much for a threshold to mean anything, so the benchmark prints.
+- Assert that quantized cosine stays inside [-1, 1].
+
+No library code changed in this release. `lib/` is byte-identical to 1.0.2.
+
 ## 1.0.2
 
 - Add `example/README.md` for pub.dev's Example tab (it was empty). It walks

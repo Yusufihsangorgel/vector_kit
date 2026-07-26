@@ -55,5 +55,11 @@ The storage layout does not have to change — rows already live in one
 to `lib/src/simd.dart` and its call sites.
 
 Tracked, not done. This document exists because the gap was shipped for weeks
-behind a `platform:web` badge that nothing tested; CI now runs the Chrome suite
-and a wasm compile on every push, so it cannot go quiet again.
+behind a `platform:web` badge that nothing tested.
+
+CI now runs the Chrome suite and a wasm compile on every push, which means the
+web target can no longer break without anyone noticing. Be clear about what that
+does not cover: the benchmark above asserts nothing about time, because CI
+runners vary too much for any threshold to be meaningful. It prints. A
+regression from 4,794 µs to 50,000 µs would leave CI green. The guard is against
+breakage; the numbers are a measurement you have to take.

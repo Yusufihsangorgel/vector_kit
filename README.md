@@ -6,9 +6,13 @@
 > `Float32x4`, which is real SIMD only on the Dart VM; off it the type is
 > emulated and the emulation is slower than a plain loop. Measured on
 > 1000×384: **79 µs per query natively, 4,794 µs on Chrome**. See
-> [doc/web-performance.md](doc/web-performance.md) for the numbers, the cause,
-> and the fix. CI now runs the Chrome suite and a wasm compile so the gap
-> cannot drift again.
+> [doc/web-performance.md](https://github.com/Yusufihsangorgel/vector_kit/blob/main/doc/web-performance.md)
+> for the numbers, the cause, and the fix.
+>
+> CI runs the Chrome suite and a wasm compile on every push, so the web target
+> cannot break unnoticed. It does not assert timings: CI runners vary too much
+> for a threshold to mean anything, so the benchmark prints rather than fails.
+> Slowness is caught by running it, not by CI.
 
 
 SIMD-accelerated vector math for embeddings: dot product, cosine
