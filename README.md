@@ -12,6 +12,37 @@ dart run bench/bench.dart
 
 ![Benchmark chart. Dot product over 768 dimensions, nanoseconds per call: a scalar loop over a list of doubles takes 665 ns, a Float32List loop 492 ns, SIMD with a single accumulator about 153 ns, and vector_kit 142 ns, which is 4.7 times faster than the list-of-doubles loop. Top-10 cosine over 10,000 rows: full scan and sort 7.2 ms per query against 1.4 ms, 5.3 times faster. Over 100,000 rows: 82 ms against 13.3 ms, 6.2 times faster.](https://raw.githubusercontent.com/Yusufihsangorgel/vector_kit/main/doc/bench.png)
 
+## Why this instead of what you already have
+
+**Instead of a scalar loop.** The chart above comes from `dart run
+bench/bench.dart`, which is in the repo and measures both sides in one process.
+A run on an Apple M-series laptop gives 647 ns per call for the `List<double>`
+dot product against 143 ns for `dot`, and 84.4 ms per query for a full scan and
+sort over 100,000 x 768 against 13.9 ms for `VectorMatrix.topKCosine`
+(`lib/src/vector_matrix.dart:236`). Those figures move a few percent run to run.
+The harness also checks that both sides return the same ten rows in the same
+order, and prints the agreement count next to the timings.
+
+**Instead of `ml_linalg`.** It is the established SIMD linear algebra package
+for Dart and it is good at what it covers, including `getCosine` and
+`distanceTo(..., distance: Distance.cosine)` between two vectors
+(`lib/vector.dart:352` and `:346`). Search its 6,544 lines and its README for
+`topk`, `top_k`, `nearest`, or `knn` and there are no hits. Searching a matrix of
+embeddings still means your own loop over every row and a sort at the end, which
+is the 84.4 ms above.
+
+**Reach for it when**
+
+- You hold more than a few thousand embeddings in memory and a query has to feel
+  instant.
+- You are doing semantic search on-device, where a hosted vector index is not an
+  option.
+- You need the top k rather than one pairwise distance, and want the same answer
+  a naive scan would give.
+
+Skip it if you have a few hundred vectors, where a plain loop finishes in under
+a millisecond and the packed-buffer bookkeeping is cost with nothing behind it.
+
 Dart has shipped SIMD types in `dart:typed_data` for years. Using `Float32x4`
 well means alignment rules, scalar tails for lengths that are not a multiple of
 four, accumulator ordering, and one platform trap that has its own section
