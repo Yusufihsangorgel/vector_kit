@@ -1,3 +1,30 @@
+## 1.1.1
+
+No library code changed in this release. `lib/` is byte-identical to 1.1.0.
+
+- The screenshot caption on the package page read "millis econds". The
+  description was a folded YAML block, the fold landed mid-word, and folding
+  joins its lines with a space. The caption is a single-line scalar now, and
+  the page gains a second screenshot: the platform chart, one top-k search on
+  the VM, dart2js and dart2wasm, each measured against the same search written
+  by hand on that target.
+- The README opens with the job and its measured cost instead of a warning
+  blockquote aimed at 1.0.4 web users. That warning grew into its own section,
+  "Off the Dart VM", which carries the platform chart and the upgrade note. A
+  new "What this is not" section says every query reads every row, prices what
+  that means, and points at an approximate index for corpora past it.
+- Two ratios in `doc/web-performance.md` had drifted in the rounding: 18.53 was
+  printed as 18 while 44.49 was printed as 45, and one cell said 1.08 where the
+  microseconds behind it give 1.07. The table now reads 18.5x, 44.5x and 1.07x,
+  and `tool/platform_bench_chart.dart` derives every ratio it draws from the
+  same constants, which keeps the chart and the table from disagreeing again.
+- README-only images no longer ship in the archive. pub.dev does not read
+  README images out of the archive; only the two `screenshots:` files have to
+  stay in it. The download drops from 457 KB to 149 KB.
+- `example/README.md` now explains what `fromRows` builds (the packed layout,
+  with the diagram) and what `fromBytes` validates, instead of pointing at file
+  names.
+
 ## 1.1.0
 
 - **The web is 15x to 41x faster.** The inner loops were written around
