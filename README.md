@@ -1,28 +1,22 @@
-![vector_kit banner](https://raw.githubusercontent.com/Yusufihsangorgel/vector_kit/main/doc/banner.png)
-
 # vector_kit
 
-> **Web users: upgrade to 1.1.0.** Up to 1.0.4 the inner loops used `Float32x4`
-> everywhere, and off the Dart VM that type is emulated rather than compiled to
-> vector instructions — slower than using no SIMD at all. 1.1.0 keeps SIMD on
-> the VM and dispatches to scalar kernels elsewhere. Measured on 1000×384,
-> `topKCosine`: **dart2js 4,780 µs → 322 µs, dart2wasm 12,102 µs → 292 µs,
-> native unchanged at 77 µs.** No API change.
->
-> Web results now accumulate in double instead of float32, so scores differ from
-> the VM by around 5e-9. Ranking does not: CI pins the exact top-10 for cosine,
-> dot and euclidean and runs it on all three targets. See
-> [doc/web-performance.md](https://github.com/Yusufihsangorgel/vector_kit/blob/main/doc/web-performance.md).
+A top-10 search over 100,000 embeddings costs 82 ms per query when you score
+every row with a scalar cosine loop and sort the results. The same search here
+costs 13.3 ms: one SIMD dot product per row of a single packed buffer, row
+norms cached at insert time, and a bounded heap in place of the sort. Both
+figures come from one command on an Apple M-series laptop, 768 dimensions:
 
+```
+dart run bench/bench.dart
+```
 
-SIMD-accelerated vector math for embeddings: dot product, cosine
-similarity, normalization, and top-k search over packed matrices.
+![Benchmark chart. Dot product over 768 dimensions, nanoseconds per call: a scalar loop over a list of doubles takes 665 ns, a Float32List loop 492 ns, SIMD with a single accumulator about 153 ns, and vector_kit 142 ns, which is 4.7 times faster than the list-of-doubles loop. Top-10 cosine over 10,000 rows: full scan and sort 7.2 ms per query against 1.4 ms, 5.3 times faster. Over 100,000 rows: 82 ms against 13.3 ms, 6.2 times faster.](https://raw.githubusercontent.com/Yusufihsangorgel/vector_kit/main/doc/bench.png)
 
-Embedding code in Dart usually ends in a plain double loop. Dart has
-shipped SIMD types in `dart:typed_data` for years, but using
-`Float32x4` correctly means alignment rules, scalar tails for lengths
-that are not a multiple of four, and accumulator ordering. vector_kit
-is that wiring as a pure Dart package with no runtime dependencies.
+Dart has shipped SIMD types in `dart:typed_data` for years. Using `Float32x4`
+well means alignment rules, scalar tails for lengths that are not a multiple of
+four, accumulator ordering, and one platform trap that has its own section
+below. vector_kit is that wiring as a pure Dart package with no runtime
+dependencies.
 
 ## Quick start
 
@@ -49,104 +43,130 @@ void main() {
 }
 ```
 
-The query is any `List<double>`, so an embedding straight from a model can be
-passed to `topKCosine`/`topKDot`/`topKEuclidean` without wrapping it in a
+The query is any `List<double>`. An embedding straight out of a model goes into
+`topKCosine`, `topKDot` or `topKEuclidean` without being wrapped in a
 `Float32List` first.
 
-`example/vector_kit_example.dart` is a short API tour;
+`example/vector_kit_example.dart` is a short API tour.
 `example/semantic_search.dart` is the real job: it builds a 20,000-document
-index of 384-dim vectors, searches it, and measures the result. On an Apple
-Silicon MacBook a top-5 query takes 1.4 ms against 15.9 ms for the obvious
-hand-written cosine loop (11x), and the int8 `QuantizedMatrix` holds the same
-index in 7.6 MB against 29.3 MB with full recall on the demo's data.
+index of 384-dimension vectors, searches it, and reports what it cost. That
+index takes 29.3 MB as float32 and 7.6 MB once quantized to int8, with a
+recall@10 of 100% on the demo's data.
 
 ## Measured performance
 
-From `bench/bench.dart` on an Apple M-series laptop, Dart 3.8+, JIT
-(`dart run bench/bench.dart`), 768-dimensional vectors:
+From `bench/bench.dart` on an Apple M-series laptop, Dart 3.11, JIT,
+768-dimensional vectors:
 
-![benchmark](https://raw.githubusercontent.com/Yusufihsangorgel/vector_kit/main/doc/bench.png)
-
-| Workload                    | Baseline                          | vector_kit   | Speedup |
-| --------------------------- | --------------------------------- | ------------ | ------- |
-| dot, 1M calls               | 665 ns/call, `List<double>` loop  | 142 ns/call  | 4.7x    |
-| dot, 1M calls               | 492 ns/call, `Float32List` loop   | 142 ns/call  | 3.5x    |
-| topKCosine k=10, 10k rows   | 7.2 ms/query, full scan and sort  | 1.4 ms/query | 5.3x    |
-| topKCosine k=10, 100k rows  | 82.0 ms/query, full scan and sort | 13.3 ms/query| 6.2x    |
+| Workload                   | Baseline                          | vector_kit    | Speedup |
+| -------------------------- | --------------------------------- | ------------- | ------- |
+| dot, 1M calls              | 665 ns/call, list-of-doubles loop | 142 ns/call   | 4.7x    |
+| dot, 1M calls              | 492 ns/call, `Float32List` loop   | 142 ns/call   | 3.5x    |
+| topKCosine k=10, 10k rows  | 7.2 ms/query, full scan and sort  | 1.4 ms/query  | 5.3x    |
+| topKCosine k=10, 100k rows | 82.0 ms/query, full scan and sort | 13.3 ms/query | 6.2x    |
 
 Compiled ahead of time (`dart compile exe`) the same benchmark gives
-126 ns/call for dot and 1.0 / 10.5 ms/query for the two top-k
-workloads. The four independent accumulators in the dot kernel are
-worth about 8 percent over a single accumulator under the JIT and 14
-percent compiled; the benchmark measures both variants. Run the
-benchmark on your own hardware before relying on any of these
-numbers.
+126 ns/call for dot and 1.0 / 10.5 ms/query for the two top-k workloads. The
+four independent accumulators in the dot kernel are worth about 8 percent over
+a single accumulator under the JIT and 14 percent compiled; the benchmark
+measures both variants.
 
-The top-k gain over a full scan comes from three things: one SIMD dot
-product per row over a single packed buffer, L2 norms precomputed when
-rows are added, and a bounded min-heap instead of sorting all scores.
+The baseline in that table scores every row and then sorts every score. A
+carefully hand-written scan is a harder yardstick: cache the row norms, keep a
+k-sized insertion list, and the gap narrows to 3.3x at 1000 rows of 384
+dimensions. `test/platform_cost_test.dart` runs that version too, on all three
+targets, and the numbers are in
+[doc/web-performance.md](https://github.com/Yusufihsangorgel/vector_kit/blob/main/doc/web-performance.md).
+Run both on your own hardware before relying on either.
+
+Where the top-k gain comes from: one SIMD dot product per row over a single
+packed buffer, L2 norms precomputed when rows are added, and a bounded min-heap
+instead of sorting all scores.
 
 ## What is inside
 
 Functions over `Float32List`:
 
-| Function              | Notes                                          |
-| --------------------- | ---------------------------------------------- |
-| `dot(a, b)`           | four `Float32x4` accumulators, scalar tail     |
-| `cosineSimilarity`    | clamped to `[-1, 1]`, rejects zero vectors     |
-| `euclideanDistance`   | L2 distance                                    |
-| `normalizeInPlace(v)` | scales `v` to unit norm, rejects zero vectors  |
-| `normalized(v)`       | same, but returns a copy                       |
+| Function              | Notes                                         |
+| --------------------- | --------------------------------------------- |
+| `dot(a, b)`           | four `Float32x4` accumulators, scalar tail    |
+| `cosineSimilarity`    | clamped to `[-1, 1]`, rejects zero vectors    |
+| `euclideanDistance`   | L2 distance                                   |
+| `normalizeInPlace(v)` | scales `v` to unit norm, rejects zero vectors |
+| `normalized(v)`       | same, but returns a copy                      |
 
-`VectorMatrix` stores rows back to back in one `Float32List`, padded
-to a multiple of four components so every row starts on a 16-byte
-boundary. The search loops read the whole matrix through a single
-`Float32x4List` view: no per-row alignment checks, no tails.
+`VectorMatrix` stores rows back to back in one `Float32List`, padded to a
+multiple of four components so every row starts on a 16-byte boundary. The
+search loops read the whole matrix through a single `Float32x4List` view: no
+per-row alignment checks, no tails.
 
 ![vector_kit memory layout: rows packed end to end in one Float32List with padding, viewed through a single Float32x4List for top-k search](https://raw.githubusercontent.com/Yusufihsangorgel/vector_kit/main/doc/layout.png)
 
 - `add(row)` copies the row in and caches its L2 norm.
-- `topKCosine(query, k)`, `topKDot(query, k)`, and
-  `topKEuclidean(query, k)` return `(index, score)` records, best
-  first. For Euclidean the score is the distance, so smaller is
-  better.
-- `rowAt(index)` returns a live view into the storage, not a copy.
-  Treat it as read-only: writing through it does not update the
-  cached norm.
-- `toBytes()` and `VectorMatrix.fromBytes(bytes)` serialize to a
-  simple binary format: the ASCII magic `VKT1`, dimension and row
-  count as little-endian uint32, then the float32 components in
-  row-major order. Corrupt input throws `FormatException`.
+- `topKCosine(query, k)`, `topKDot(query, k)`, and `topKEuclidean(query, k)`
+  return `(index, score)` records, best first. For Euclidean the score is the
+  distance itself: smaller is better.
+- `rowAt(index)` returns a live view into the storage, not a copy. Treat it as
+  read-only; writing through it leaves the cached norm stale.
+- `toBytes()` and `VectorMatrix.fromBytes(bytes)` serialize to a simple binary
+  format: the ASCII magic `VKT1`, dimension and row count as little-endian
+  uint32, then the float32 components in row-major order. Corrupt input throws
+  `FormatException`.
+
+## Off the Dart VM
+
+`Float32x4` is a real SIMD type only on the Dart VM. Everywhere else the SDK
+emulates it: dart2js backs it with four boxed doubles and allocates a fresh
+object on every lane read, and dart2wasm's own patch file names its version
+`NaiveFloat32x4`. Emulated SIMD runs slower than writing no SIMD at all, which
+is a trap this package fell into and shipped through 1.0.4.
+
+```
+dart test test/platform_cost_test.dart -t bench
+dart test test/platform_cost_test.dart -t bench -p chrome
+dart test test/platform_cost_test.dart -t bench -p chrome -c dart2wasm
+```
+
+![The cost of one top-k cosine search on three targets, each measured against the same search hand-written as a plain scalar loop on that same target. With Float32x4 kernels compiled everywhere: 0.31 times the loop on the native VM, 18.5 times the loop on dart2js, 44.5 times on dart2wasm. With SIMD on the VM and scalar kernels elsewhere, which is what 1.1.0 ships: 0.30 times on the VM, 1.25 times on dart2js, 1.07 times on dart2wasm.](https://raw.githubusercontent.com/Yusufihsangorgel/vector_kit/main/doc/platform.png)
+
+**If you ship to web on 1.0.4 or earlier, upgrade.** Since 1.1.0 the kernel set
+is chosen at compile time from `dart.library.js_interop`: SIMD on the VM, plain
+scalar loops elsewhere. Nothing in the public API changed. On the web the
+package now costs about what the hand-written loop costs, and the packed
+storage, the persistence and the int8 path all come with it.
+
+The scalar kernels accumulate in double where the VM kernels accumulate in
+float32, which puts web scores about 5e-9 away from VM scores and makes them
+marginally more accurate. Ranking is asserted rather than assumed:
+`test/cross_platform_test.dart` pins the exact top-10 rows for cosine, dot and
+euclidean, and CI runs it on the VM, on dart2js and on dart2wasm.
 
 ## Validation
 
-Every operation fails fast instead of letting a bad component poison
-scores downstream: length mismatches, empty vectors, NaN or infinite
-components, and zero vectors where the operation is undefined all
-throw `ArgumentError` at the call site.
+Every operation fails fast instead of letting a bad component poison scores
+downstream: length mismatches, empty vectors, NaN or infinite components, and
+zero vectors where the operation is undefined all throw `ArgumentError` at the
+call site.
 
-The finiteness check costs nothing on the hot path. A NaN or infinite
-component always drives a multiply-add accumulation non-finite, and
-infinities never cancel back to a finite value, so vector_kit only
-rescans the inputs to locate the exact offending component when a
-result comes back non-finite.
+The finiteness check costs nothing on the hot path. A NaN or infinite component
+always drives a multiply-add accumulation non-finite, and infinities never
+cancel back to a finite value. Only a non-finite result triggers a rescan of
+the inputs to locate the exact offending component.
 
 ## Precision
 
-Accumulation happens in `Float32x4` lanes, so results differ from an
-exact double-precision sum. The test suite pins the difference to
-within 1e-5 relative to the product of the input norms at dimensions
-up to 1024. The scalar tail (the last `length % 4` components)
-accumulates in double precision, so components tiny enough to
-underflow float32 (below about 1e-38) can contribute or vanish
-depending on their position; real embedding values are many orders of
-magnitude above that floor. If you need double-precision
-accumulation, this package is the wrong tool.
+Accumulation happens in `Float32x4` lanes rather than in double, which puts
+results a little away from an exact double-precision sum. The test suite pins
+the difference to within 1e-5 relative to the product of the input norms at
+dimensions up to 1024. The scalar tail (the last `length % 4` components)
+accumulates in double precision. Components tiny enough to underflow float32
+(below about 1e-38) can therefore contribute or vanish depending on their
+position; real embedding values sit many orders of magnitude above that floor.
+If you need double-precision accumulation, this package is the wrong tool.
 
-Inputs are accepted as any `Float32List`, including views. A view
-that does not start on a 16-byte boundary is copied internally before
-the SIMD loop; `normalizeInPlace` still writes the result back to the
-original view.
+Inputs are accepted as any `Float32List`, including views. A view that does not
+start on a 16-byte boundary is copied internally before the SIMD loop, and
+`normalizeInPlace` still writes the result back to the original view.
 
 ## int8 quantization
 
@@ -160,7 +180,7 @@ final compact = QuantizedMatrix.from(matrix);
 final hits = compact.topKCosine(query, 10);
 ```
 
-![int8 quantization on 5,000 vectors of 768 dimensions: memory drops from 14.6 MB to 3.7 MB, 3.9 times smaller; 99.3% of the float top-10 survives quantization; search is 4.1 times slower, 664 to 2723 microseconds per query, because the int8 rows cannot take the SIMD float path, so this buys memory not throughput.](https://raw.githubusercontent.com/Yusufihsangorgel/vector_kit/main/doc/quantization.png)
+![int8 quantization on 5,000 vectors of 768 dimensions: memory drops from 14.6 MB to 3.7 MB, 3.9 times smaller; 99.3% of the float top-10 survives quantization; search is 4.1 times slower, 664 to 2723 microseconds per query, because the int8 rows cannot take the SIMD float path, which buys memory and costs throughput.](https://raw.githubusercontent.com/Yusufihsangorgel/vector_kit/main/doc/quantization.png)
 
 `benchmark/quantization_benchmark.dart`, seeded, on an Apple M-series core:
 
@@ -168,32 +188,54 @@ final hits = compact.topKCosine(query, 10);
 |---|---|---|
 | memory | 14.6 MB | 3.7 MB (3.9x smaller) |
 | search | 664 µs/query | 2723 µs/query (4.1x the time) |
-| recall@10 | — | 99.3% of the float top-10 |
+| recall@10 | n/a | 99.3% of the float top-10 |
 
-So this buys memory and costs throughput: the byte rows cannot go through the
-same SIMD path the float rows do. Reach for it when the corpus is the problem,
-not when the latency is.
+This buys memory and costs throughput: the byte rows cannot go through the same
+SIMD path the float rows do. Reach for it when the corpus is the problem rather
+than the latency.
 
-Take that recall as an upper bound rather than a promise: those are uniformly
-random vectors, which sit far apart in 768 dimensions, so rounding rarely
-reorders them, and packing more vectors into the same space lowers it. Real
+Take that recall as an upper bound rather than a promise. Those are uniformly
+random vectors, which sit far apart in 768 dimensions, and rounding rarely
+reorders them; packing more vectors into the same space lowers it. Real
 embeddings cluster, and clustered neighbours are exactly the ones eight bits
-can confuse. `QuantizedMatrix.from` leaves the source matrix untouched
-precisely so you can measure recall on your own vectors before trusting it.
+confuse. `QuantizedMatrix.from` leaves the source matrix untouched precisely so
+you can measure recall on your own vectors before trusting it.
+
+## What this is not
+
+This is not a database and not an index. Every query reads every row, which is
+what the 13.3 ms at 100,000 x 768 buys and also what it costs: ten times the
+corpus is ten times the work, with no build step to amortize it against. Past
+the size where that hurts you want an approximate index, and on device that
+means [objectbox](https://pub.dev/packages/objectbox), which keeps vectors in
+an HNSW index next to your other fields and queries them together.
+
+What the full scan buys back is that the answer is the true top-k, with no
+tuning parameter between you and it. An approximate index filtered after the
+fact can return fewer rows than you asked for, because the filter runs over the
+neighbours the index already picked rather than over the corpus; ObjectBox
+documents that on `maxResultCount`, and the request to spell it out in the
+vector-search guide has been
+[open since 2024](https://github.com/objectbox/objectbox-dart/issues/658).
+Here the equivalent move is exact: `topKCosine(query, matrix.rowCount)` scores
+and orders every row, and filtering that list afterwards still leaves you the
+true top-k of whatever survives.
+
+Missing on purpose: no metadata or filter DSL, since `topK*` returns row
+indices and what a row means is yours to store; no isolate pool; no
+`Float64List` path; no persistence past `toBytes()`.
 
 ## Relation to rag_kit
 
-[rag_kit](https://github.com/Yusufihsangorgel/rag_kit) covers the
-retrieval pipeline (chunking, embedding orchestration, context
-building) and vector_kit is the numeric layer such a pipeline can sit
-on; neither package depends on the other today.
+[rag_kit](https://github.com/Yusufihsangorgel/rag_kit) covers the retrieval
+pipeline (chunking, embedding orchestration, context building) and vector_kit
+is the numeric layer such a pipeline can sit on; neither package depends on the
+other today.
 
 ## Planned
 
-- Approximate nearest neighbor search (HNSW).
-- Isolate-parallel search for very large matrices.
-
-These stay out until the exact-search core has settled.
+Approximate nearest neighbour search (HNSW) and isolate-parallel search for
+very large matrices. Both stay out until the exact-search core has settled.
 
 ## License
 

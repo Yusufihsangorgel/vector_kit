@@ -1,0 +1,18 @@
+# Media that only the README needs, kept out of the published archive.
+#
+# pub.dev does not read README images from the archive: it rewrites every <img>
+# through external-images.pub.dev to the raw GitHub URL, so these files have to
+# be on main and do not have to be in the tarball. Excluding them takes the
+# archive from 523 KB to roughly 130 KB.
+#
+# Two files deliberately stay: doc/bench.png and doc/platform.png are named by
+# `screenshots:` in pubspec.yaml, and those ARE served from the archive. Listing
+# either here would make publishing fail.
+#
+# This file shadows a .gitignore in this same directory. There is none here, so
+# nothing is lost; do not move these rules to the repository root, where they
+# would shadow the real .gitignore.
+banner.png
+layout.png
+quantization.png
+quantization.json

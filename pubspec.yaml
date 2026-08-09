@@ -11,11 +11,14 @@ topics:
   - similarity
   - performance
 
+# Single-line double-quoted on purpose. A folded (>-) block wraps at the line
+# break and pub.dev renders the wrap point as a space, which split
+# "milliseconds" into "millis econds" on the live page.
 screenshots:
-  - description: >-
-      Nanoseconds per 768-dimension dot product against scalar loops, and millis
-      econds per top-10 cosine query over 10,000 and 100,000 vectors.
+  - description: "Nanoseconds per 768-dimension dot product against scalar loops, and milliseconds per top-10 cosine query over 10,000 and 100,000 vectors."
     path: doc/bench.png
+  - description: "Cost of one top-k search on the Dart VM, dart2js and dart2wasm, each measured against the same search written by hand on that target."
+    path: doc/platform.png
 
 environment:
   sdk: ^3.8.0

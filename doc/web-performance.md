@@ -38,13 +38,20 @@ dart test test/platform_cost_test.dart -t bench -p chrome -c dart2wasm
 The third benchmark in that file is the honest yardstick: the same search
 written by hand with no package at all, one packed `Float32List`, cached row
 norms, a k-sized insertion top-k. It costs 257 µs native, 258 µs on dart2js and
-272 µs on dart2wasm — a plain loop is close to platform-neutral. Against it:
+272 µs on dart2wasm: a plain loop is close to platform-neutral. Against it:
 
 | | 1.0.4 | 1.1.0 |
 |---|---|---|
 | native VM | 3.3× faster than the loop | **3.3× faster** |
-| dart2js | 18× slower | **1.25× slower** |
-| dart2wasm | 45× slower | **1.08× slower** |
+| dart2js | 18.5× slower | **1.25× slower** |
+| dart2wasm | 44.5× slower | **1.07× slower** |
+
+The two web rows are the microsecond figure divided by the hand-written loop on
+that target. The native row gives the reciprocal, because there the package is
+the faster of the two. An earlier revision truncated 18.53 to "18" while
+rounding 44.49 up to "45", and carried 1.08 where 292/272 gives 1.07.
+`tool/platform_bench_chart.dart` now derives every ratio it draws from these
+same constants, which keeps the chart and this table from drifting apart.
 
 So on the web the package no longer costs you anything meaningful against
 writing it yourself, and you keep the API, the persistence and the int8 path.
@@ -55,7 +62,7 @@ It is still the VM where the SIMD earns its keep.
 The VM kernels accumulate in float32, because that is what their vector
 registers hold. The scalar kernels accumulate in double, because reading a
 `Float32List` element already widens it and narrowing the running sum again
-would mean rounding through memory on every step — which would cost more than
+would mean rounding through memory on every step, which would cost more than
 the emulation this change exists to avoid.
 
 That makes web results slightly different from VM results, and slightly more
