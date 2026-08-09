@@ -54,9 +54,7 @@ void main() {
   var minDistance = double.infinity;
 
   // Everything QuantizedMatrix exposes today, for every row.
-  final dotScores = {
-    for (final (i, s) in quantized.topKDot(query, rows)) i: s,
-  };
+  final dotScores = {for (final (i, s) in quantized.topKDot(query, rows)) i: s};
   final cosScores = {
     for (final (i, s) in quantized.topKCosine(query, rows)) i: s,
   };
