@@ -12,6 +12,9 @@ dart run bench/bench.dart
 
 ![Benchmark chart. Dot product over 768 dimensions, nanoseconds per call: a scalar loop over a list of doubles takes 665 ns, a Float32List loop 492 ns, SIMD with a single accumulator about 153 ns, and vector_kit 142 ns, which is 4.7 times faster than the list-of-doubles loop. Top-10 cosine over 10,000 rows: full scan and sort 7.2 ms per query against 1.4 ms, 5.3 times faster. Over 100,000 rows: 82 ms against 13.3 ms, 6.2 times faster.](https://raw.githubusercontent.com/Yusufihsangorgel/vector_kit/main/doc/bench.png)
 
+![The semantic search example running: a set of sentences is embedded, a query
+is matched against them, and the nearest ones come back with their scores](https://raw.githubusercontent.com/Yusufihsangorgel/vector_kit/main/doc/demo.gif)
+
 ## Why this instead of what you already have
 
 **Instead of a scalar loop.** The chart above comes from `dart run
