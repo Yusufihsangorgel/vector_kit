@@ -20,6 +20,52 @@ Float32List _query(int dimension, {int seed = 99}) {
   ]);
 }
 
+/// Rows that survive quantization untouched.
+///
+/// Every component is a whole number and every row peaks at exactly 127, so
+/// the per-row scale is 1.0 and each stored byte dequantizes back to the
+/// value written here. That is what lets the tests below pin an exact
+/// ordering and an exact distance instead of a tolerance.
+List<List<double>> _losslessRows() => [
+  [127.0, 0.0, 0.0, 0.0],
+  [127.0, 10.0, 0.0, 0.0],
+  [127.0, 0.0, 30.0, 0.0],
+  [-127.0, 5.0, 0.0, 0.0],
+  [127.0, 0.0, 0.0, 60.0],
+];
+
+/// Two 768-component rows of whole numbers, each peaking at exactly 127, so
+/// the scale is 1.0 and every stored byte dequantizes back to the value
+/// generated here.
+List<List<double>> _wholeNumberRows() {
+  final rng = Random(4242);
+  List<double> row() => [
+    127.0,
+    for (var i = 1; i < 768; i++) (rng.nextInt(255) - 127).toDouble(),
+  ];
+  return [row(), row()];
+}
+
+/// Distances worked out row by row and sorted, with no part of the search
+/// under test involved.
+List<(int index, double distance)> _nearestByBruteForce(
+  List<List<double>> rows,
+  List<double> query,
+  int k,
+) {
+  final scored = <(int, double)>[];
+  for (var r = 0; r < rows.length; r++) {
+    var sum2 = 0.0;
+    for (var i = 0; i < query.length; i++) {
+      final d = query[i] - rows[r][i];
+      sum2 += d * d;
+    }
+    scored.add((r, sqrt(sum2)));
+  }
+  scored.sort((a, b) => a.$2.compareTo(b.$2));
+  return scored.take(k).toList();
+}
+
 void main() {
   test('it stores about a quarter of the bytes', () {
     final matrix = _corpus();
@@ -91,6 +137,156 @@ void main() {
     );
   });
 
+  test('euclidean ranking survives quantization', () {
+    final matrix = _corpus(rows: 100, dimension: 64);
+    final quantized = QuantizedMatrix.from(matrix);
+    final query = _query(64, seed: 7);
+    expect(
+      quantized
+          .topKEuclidean(query, 5)
+          .map((e) => e.$1)
+          .toSet()
+          .intersection(
+            matrix.topKEuclidean(query, 5).map((e) => e.$1).toSet(),
+          ),
+      hasLength(greaterThanOrEqualTo(4)),
+    );
+  });
+
+  test('nearest rows come back nearest first', () {
+    // The rows are lossless, so the brute-force distances are the distances
+    // the search should report rather than an approximation of them. This is
+    // the test that catches a sign error: drop the negation that turns
+    // "smallest distance" into "largest score" and the farthest rows come
+    // back instead, in a well-formed list of exactly the right length.
+    final rows = _losslessRows();
+    final quantized = QuantizedMatrix.from(VectorMatrix.fromRows(rows));
+    final query = <double>[127.0, 2.0, 1.0, 0.0];
+
+    final got = quantized.topKEuclidean(query, rows.length);
+    final expected = _nearestByBruteForce(rows, query, rows.length);
+
+    expect(got.map((e) => e.$1).toList(), expected.map((e) => e.$1).toList());
+    for (var i = 0; i < got.length; i++) {
+      expect(got[i].$2, closeTo(expected[i].$2, 1e-12));
+    }
+  });
+
+  test('scores are distances, not squared distances', () {
+    // The 127 peaks the row, so the scale is exactly 1.0 and the stored row
+    // is exactly [127, 0, 0]. The query sits 3 away along one axis and 4
+    // along another, which is 5 by Pythagoras and 25 without the square root.
+    final quantized = QuantizedMatrix.from(
+      VectorMatrix.fromRows([
+        [127.0, 0.0, 0.0],
+      ]),
+    );
+    expect(quantized.topKEuclidean([124.0, 4.0, 0.0], 1).single.$2, 5.0);
+  });
+
+  test('a zero row is scored, not skipped', () {
+    // topKCosine skips a zero row because it has no direction to compare
+    // against. A zero row is still a point at the origin, and it can be the
+    // nearest one, so the Euclidean search has to score it.
+    final matrix = VectorMatrix.fromRows([
+      [0.0, 0.0, 0.0],
+      [1.0, 2.0, 3.0],
+    ]);
+    final quantized = QuantizedMatrix.from(matrix);
+    final results = quantized.topKEuclidean([1.0, 2.0, 3.0], 2);
+
+    expect(results.map((e) => e.$1).toList(), [1, 0]);
+    expect(results[1].$2, closeTo(sqrt(14), 1e-12));
+  });
+
+  test('a zero query is allowed and ranks by row norm', () {
+    // Cosine throws here because there is no angle to measure. The distance
+    // from the origin to a row is just that row's norm, which is a fair
+    // question to ask, so the Euclidean search answers it.
+    final rows = <List<double>>[
+      [127.0, 0.0, 0.0],
+      [127.0, 127.0, 0.0],
+      [127.0, 127.0, 127.0],
+    ];
+    final quantized = QuantizedMatrix.from(VectorMatrix.fromRows(rows));
+    final origin = <double>[0.0, 0.0, 0.0];
+
+    expect(() => quantized.topKCosine(origin, 3), throwsArgumentError);
+
+    final results = quantized.topKEuclidean(origin, 3);
+    expect(results.map((e) => e.$1).toList(), [0, 1, 2]);
+    expect(results[0].$2, closeTo(127.0, 1e-12));
+    expect(results[2].$2, closeTo(sqrt(3) * 127.0, 1e-12));
+  });
+
+  test('k larger than rowCount returns rowCount entries', () {
+    // The zero row does not shorten the result the way it does for cosine.
+    final matrix = VectorMatrix.fromRows([
+      [0.0, 0.0, 0.0],
+      [1.0, 2.0, 3.0],
+      [4.0, 5.0, 6.0],
+    ]);
+    final quantized = QuantizedMatrix.from(matrix);
+    final query = <double>[1.0, 1.0, 1.0];
+    expect(quantized.topKEuclidean(query, 10).length, 3);
+    expect(quantized.topKCosine(query, 10).length, 2);
+  });
+
+  test('a euclidean search on an empty matrix returns an empty list', () {
+    final quantized = QuantizedMatrix.from(VectorMatrix(4));
+    expect(quantized.topKEuclidean([1.0, 0.0, 0.0, 0.0], 3), isEmpty);
+  });
+
+  test('scores come back ordered, nearest first', () {
+    final quantized = QuantizedMatrix.from(_corpus(rows: 200, dimension: 32));
+    for (var s = 0; s < 10; s++) {
+      final results = quantized.topKEuclidean(_query(32, seed: 300 + s), 10);
+      expect(results, hasLength(10));
+      for (var i = 1; i < results.length; i++) {
+        expect(
+          results[i].$2,
+          greaterThanOrEqualTo(results[i - 1].$2),
+          reason: 'query $s: ${results[i - 1]} came before ${results[i]}',
+        );
+      }
+    }
+  });
+
+  test('a query equal to a stored row scores exactly zero', () {
+    // The rows round-trip, so the stored row is the row generated here and
+    // the distance from it to itself has no rounding to hide behind.
+    final rows = _wholeNumberRows();
+    final quantized = QuantizedMatrix.from(VectorMatrix.fromRows(rows));
+
+    final results = quantized.topKEuclidean(rows[0], 2);
+    expect(results.first.$1, 0);
+    expect(results.first.$2, 0.0);
+  });
+
+  test('a near miss keeps its precision', () {
+    // This is what holds the distance to a direct loop over the differences.
+    // Expanding it to |q|^2 - 2<q,x> + |x|^2 would let the dot loop and the
+    // cached norm be reused, but it reaches a small distance by subtracting
+    // numbers near 4.1e6: for the query below it returns 1.00012e-3 against
+    // a true separation of 1e-3, while the direct loop lands within 2.4e-15
+    // of it.
+    //
+    // Measured, not assumed: the exact-zero test above does not catch that
+    // by itself. Over 500 seeds of this corpus the expansion also returned
+    // exactly 0.0 in 386 of them, because |q|^2 is a whole number there and
+    // the cached norm usually squares back to it. A near miss separates the
+    // two every time, and a near miss is what this search is made of.
+    final rows = _wholeNumberRows();
+    final quantized = QuantizedMatrix.from(VectorMatrix.fromRows(rows));
+
+    final query = List<double>.from(rows[0]);
+    query[5] += 0.001;
+
+    final results = quantized.topKEuclidean(query, 1);
+    expect(results.single.$1, 0);
+    expect(results.single.$2, closeTo(0.001, 1e-9));
+  });
+
   test('a zero row is skipped rather than scored', () {
     final matrix = VectorMatrix.fromRows([
       [0.0, 0.0, 0.0],
@@ -131,6 +327,14 @@ void main() {
     expect(() => quantized.topKCosine(Float32List(7), 1), throwsArgumentError);
     // An all-zero query has no direction to compare against.
     expect(() => quantized.topKCosine(Float32List(8), 1), throwsArgumentError);
+    expect(
+      () => quantized.topKEuclidean(Float32List(8), 0),
+      throwsArgumentError,
+    );
+    expect(
+      () => quantized.topKEuclidean(Float32List(7), 1),
+      throwsArgumentError,
+    );
   });
 
   test('rejects a NaN or infinite component in the query', () {
@@ -145,6 +349,13 @@ void main() {
     expect(
       () => quantized.topKDot(
         Float32List.fromList([double.infinity, 2, 3, 4, 5, 6, 7, 8]),
+        1,
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => quantized.topKEuclidean(
+        Float32List.fromList([1, 2, 3, 4, 5, 6, 7, double.nan]),
         1,
       ),
       throwsArgumentError,

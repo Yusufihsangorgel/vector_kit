@@ -591,6 +591,51 @@ final class QuantizedMatrix {
     return heap.drainDescending();
   }
 
+  /// The [k] rows nearest to [query] by Euclidean distance, nearest first.
+  /// The score is the distance itself, so smaller is better.
+  ///
+  /// Distances are measured against the stored rows, which are the rounded
+  /// ones, the same way [topKCosine] scores against the norm of what is
+  /// stored rather than the norm of the row it came from.
+  ///
+  /// Two things differ from [topKCosine], both because a distance is defined
+  /// where an angle is not. A zero row is scored instead of skipped, since
+  /// the origin is a real point and can be the nearest one, so the result
+  /// always holds `min(k, rowCount)` entries. A zero query is allowed, and
+  /// then each row is scored by its own norm.
+  ///
+  /// The order of rows with exactly equal distances is unspecified.
+  ///
+  /// Throws [ArgumentError] if [k] is below 1, if [query] has the wrong
+  /// length, or if [query] contains a NaN or infinite component.
+  List<(int index, double score)> topKEuclidean(List<double> query, int k) {
+    _check(query, k);
+    final heap = _TopKHeap(math.min(k, _count));
+    for (var r = 0; r < _count; r++) {
+      final scale = _scales[r];
+      final base = r * dimension;
+      // Accumulate the differences directly rather than expanding to
+      // |q|^2 - 2<q,x> + |x|^2, which would reuse the dot loop above and the
+      // norm already cached per row. The expansion reaches a small distance
+      // by subtracting large numbers and loses exactly the digits a
+      // nearest-neighbour search is reading: on a 768-component row it
+      // reports 1.00012e-3 for a separation of 1e-3. See the near-miss test.
+      var sum2 = 0.0;
+      for (var i = 0; i < dimension; i++) {
+        final d = query[i] - _data[base + i] * scale;
+        sum2 += d * d;
+      }
+      // Negated so the keep-the-largest heap shared with the other two
+      // searches keeps the nearest rows rather than the farthest. A sum of
+      // squares cannot be negative, so the root below needs no clamp.
+      heap.offer(r, -sum2);
+    }
+    return [
+      for (final (index, negSquared) in heap.drainDescending())
+        (index, math.sqrt(-negSquared)),
+    ];
+  }
+
   void _check(List<double> query, int k) {
     if (k < 1) {
       throw ArgumentError.value(k, 'k', 'must be at least 1');
