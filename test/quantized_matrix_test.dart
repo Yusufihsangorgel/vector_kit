@@ -271,11 +271,14 @@ void main() {
     // a true separation of 1e-3, while the direct loop lands within 2.4e-15
     // of it.
     //
-    // Measured, not assumed: the exact-zero test above does not catch that
-    // by itself. Over 500 seeds of this corpus the expansion also returned
-    // exactly 0.0 in 386 of them, because |q|^2 is a whole number there and
-    // the cached norm usually squares back to it. A near miss separates the
-    // two every time, and a near miss is what this search is made of.
+    // Measured, not assumed: the exact-zero test above does not catch this by
+    // itself. When the query is the row, the components are whole numbers, so
+    // |q|^2 is exact and the cached norm usually squares back to it, and the
+    // expansion reaches exactly 0.0 too. Over 500 seeds of a corpus shaped
+    // like this one it did so in 265 of them, which is enough that a test
+    // checking only the zero case would have passed with either
+    // implementation. A near miss separates them every time, and a near miss
+    // is what this search is made of.
     final rows = _wholeNumberRows();
     final quantized = QuantizedMatrix.from(VectorMatrix.fromRows(rows));
 
