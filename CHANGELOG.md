@@ -1,3 +1,15 @@
+## 1.3.0
+
+- `QuantizedMatrix` gains `topKEuclidean`. It was the one search the float
+  matrix had that quantizing silently took away, with no note anywhere saying
+  why, so a caller who quantized to save memory lost a method and got only a
+  compile error to explain it.
+- The distance is summed straight over the differences rather than expanded to
+  the cached norm and dot product. The expansion reaches a small distance by
+  subtracting numbers near 4.1e6, and over this corpus its worst error is
+  8.1e-7 against 4.8e-15 for the direct loop. That is the difference between
+  ranking a near miss correctly and not.
+
 ## 1.2.1
 
 - The README opens with a recording of the package running, rendered from a
