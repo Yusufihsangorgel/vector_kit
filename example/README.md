@@ -1,9 +1,9 @@
 # vector_kit example
 
-Two programs. `vector_kit_example.dart` shows the whole public surface on toy
+Three programs. `vector_kit_example.dart` shows the whole public surface on toy
 vectors small enough that every number stays readable. `semantic_search.dart`
 runs the job the package exists for, at a size where the layout starts to
-matter.
+matter. `with_rag_kit.dart` wires `VectorKitStore` into rag_kit's `Retriever`.
 
 ## The API tour
 
@@ -79,3 +79,21 @@ has the controlled numbers, taken from `bench/bench.dart`, along with the
 recall caveat that matters here: uniformly random vectors sit far apart in high
 dimensions, and real embeddings cluster, which is exactly the case eight bits
 find hardest.
+
+## rag_kit
+
+`vector_kit_store.dart` is a rag_kit `VectorStore` over `VectorMatrix`. It is
+not in `lib/`: the interface types live in rag_kit, and importing them from
+the public library would make rag_kit a runtime dependency of every
+vector_kit user. Copy that file into an app that already depends on both
+packages.
+
+It is the better backend on the Dart VM from a few thousand chunks up, which
+is where a cosine loop first costs a millisecond. Below that, and on the web,
+keep rag_kit's `InMemoryVectorStore`. The package README spells out the
+sizes. `test/rag_kit_store_test.dart` asserts that the same query through both
+stores returns the same document order, including ties.
+
+```
+dart run example/with_rag_kit.dart
+```

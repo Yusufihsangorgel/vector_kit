@@ -131,6 +131,15 @@ relative to the product of input norms up to dimension 1024.
   other target breaks. Fix: keep names and signatures identical.
 - Treating this as an approximate index. Symptom: time grows linearly with
   `rowCount`. There is no build step and no filter DSL.
+- Putting `VectorKitStore` in `lib/` so it can implement rag_kit's
+  `VectorStore`. Symptom: rag_kit becomes a runtime dependency of every
+  consumer. The adapter stays in `example/vector_kit_store.dart`; rag_kit
+  is a dev dependency. Copy the file into an app that depends on both.
+- `VectorKitStore` for a few hundred rag_kit chunks, or on the web, for
+  speed. Symptom: a dependency for a sub-millisecond loop, or a slowdown
+  on dart2js / dart2wasm. `InMemoryVectorStore` already caches norms and
+  uses a k-heap. The packed scan pays off on the Dart VM from a few
+  thousand chunks up.
 
 ## Where
 
@@ -140,9 +149,12 @@ relative to the product of input norms up to dimension 1024.
 - `simd.dart` — kernel selection; do not import `simd_native.dart` or
   `simd_web.dart` directly.
 - `example/` — `vector_kit_example.dart`, `semantic_search.dart` (20,000 ×
-  384: 29.3 MB float32, 7.6 MB int8, recall@10 100% on that random data).
+  384: 29.3 MB float32, 7.6 MB int8, recall@10 100% on that random data),
+  `vector_kit_store.dart` (a rag_kit `VectorStore`; not in `lib/`),
+  `with_rag_kit.dart`.
 - Tests: `dart test`. Ranking across VM / dart2js / dart2wasm:
-  `test/cross_platform_test.dart`.
+  `test/cross_platform_test.dart`. rag_kit `VectorStore` contract:
+  `test/rag_kit_store_test.dart`.
 - Platform timings (print only):
   `dart test test/platform_cost_test.dart -t bench`, and the same with
   `-p chrome` and `-p chrome -c dart2wasm`.

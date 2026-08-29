@@ -1,3 +1,31 @@
+## 1.4.0
+
+- A `VectorStore` for [rag_kit](https://pub.dev/packages/rag_kit), so a
+  `Retriever` can sit on `VectorMatrix.topKCosine` instead of rag_kit's
+  scan-and-heap. The adapter is `example/vector_kit_store.dart`, not
+  `lib/`: `VectorStore` is rag_kit's type, and putting the class behind
+  `package:vector_kit/vector_kit.dart` would make rag_kit a runtime
+  dependency of everyone who only wanted a packed matrix. rag_kit is a
+  dev dependency, used by that file and by the contract tests. Copy the
+  adapter into an app that already depends on both packages.
+
+  It is not a speedup at the size most rag_kit corpora start at.
+  `InMemoryVectorStore` already caches L2 norms and keeps a k-heap — the
+  careful loop in `test/platform_cost_test.dart`, not the naive sort in
+  `bench/break_even.dart`. That loop first costs a millisecond between
+  1,000 rows (699 µs) and 3,200 (2.28 ms) of 768 dimensions on the Dart
+  VM. Below a few thousand chunks, keep the in-memory store. From there
+  up, and clearly at the 10k–100k sizes rag_kit names as its range, the
+  packed scan is the better backend on the VM. On the web
+  `VectorMatrix.topKCosine` is slower than the same loop, so this is not
+  the backend to reach for in dart2js or dart2wasm.
+
+  `test/rag_kit_store_test.dart` runs the same queries through
+  `InMemoryVectorStore` and `VectorKitStore` and asserts the same
+  document order, including equal-score ties, zero rows, a zero query,
+  `where` applied before the k-cut, re-upsert of an existing id, and a
+  batch that repeats an id. `lib/` is unchanged.
+
 ## 1.3.1
 
 No library code changed in this release. `lib/` is byte-identical to 1.3.0.

@@ -298,10 +298,53 @@ indices and what a row means is yours to store; no isolate pool; no
 
 ## Relation to rag_kit
 
-[rag_kit](https://github.com/Yusufihsangorgel/rag_kit) covers the retrieval
-pipeline (chunking, embedding orchestration, context building) and vector_kit
-is the numeric layer such a pipeline can sit on; neither package depends on the
-other today.
+[rag_kit](https://pub.dev/packages/rag_kit) is the retrieval pipeline
+(chunking, embedding, context building) and this package is a numeric
+backend for it. rag_kit ships `InMemoryVectorStore`, which scores every
+row with a scalar cosine loop, caches the L2 norm, and keeps a k-heap.
+That is already the careful scan, not the naive sort in the break-even
+table above.
+
+`example/vector_kit_store.dart` is a `VectorStore` that uses
+`VectorMatrix.topKCosine` on the unfiltered path and scores only the
+rows that pass `where`. It is **not** exported from
+`package:vector_kit/vector_kit.dart`. Implementing rag_kit's interface
+requires importing rag_kit, and putting that import in `lib/` would make
+rag_kit a runtime dependency of every vector_kit user. rag_kit is a dev
+dependency here. Copy the adapter into an app that already depends on
+both packages:
+
+```dart
+import 'package:rag_kit/rag_kit.dart';
+
+import 'vector_kit_store.dart'; // the copied file
+
+final retriever = Retriever(
+  embedder: myEmbedder,
+  store: VectorKitStore(),
+  chunker: Chunker.paragraphs(),
+);
+```
+
+**When it is worth it.** On the Dart VM, a query over the careful loop
+first costs a millisecond between 1,000 and 3,200 rows of 768
+dimensions (`dart run bench/break_even.dart`). Below a few thousand
+chunks — a handbook, a small notes corpus — keep
+`InMemoryVectorStore`. From a few thousand up, and clearly at the
+10k–100k sizes rag_kit names as its range, the packed scan is the
+better backend on the VM (5.5x at 10,000 rows, 6.4x at 100,000 against
+the sort; about 3x against the careful loop at 1,000 × 384). On the
+web, `VectorMatrix.topKCosine` is slower than that loop (322 µs vs
+258 µs dart2js, 292 µs vs 272 µs dart2wasm at 1,000 × 384), so this
+adapter is not a speedup there.
+
+The store keeps the documents plus a packed copy of the embeddings, so
+the float32 footprint is roughly twice `InMemoryVectorStore` at the same
+count. Replacing or removing a row rebuilds the matrix; index once and
+query many times.
+
+`test/rag_kit_store_test.dart` sends the same queries through both
+stores and asserts the same document order, including ties.
 
 ## Planned
 
