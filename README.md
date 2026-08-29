@@ -15,6 +15,42 @@ dart run bench/bench.dart
 ![The semantic search example running: a set of sentences is embedded, a query
 is matched against them, and the nearest ones come back with their scores](https://raw.githubusercontent.com/Yusufihsangorgel/vector_kit/main/doc/demo.gif)
 
+## When not to import it
+
+Do not take this dependency for a few hundred vectors. A hand-written cosine
+loop plus a sort is 5.9 µs at 10 rows of 768 dimensions.
+`VectorMatrix.topKCosine` is faster at every size we measured — 1.9 µs at
+those same 10 rows — and that is still not a reason to import a package.
+Write the loop until a query costs milliseconds.
+
+```
+dart run bench/break_even.dart
+```
+
+Dart VM, JIT, 768-d, k=10. The baseline is the same scan-and-sort
+`bench/bench.dart` uses at 10,000 and 100,000 rows:
+
+|    rows | loop + sort | topKCosine | vs the loop |
+| ------: | ----------: | ---------: | ----------: |
+|      10 |      5.9 µs |     1.9 µs |        3.1x |
+|      32 |     20.2 µs |     5.1 µs |        3.9x |
+|     100 |     63.8 µs |    14.7 µs |        4.3x |
+|     320 |    215.9 µs |    45.5 µs |        4.7x |
+|   1,000 |    699.3 µs |   136.2 µs |        5.1x |
+|   3,200 |     2.28 ms |   429.1 µs |        5.3x |
+|  10,000 |     7.44 ms |    1.35 ms |        5.5x |
+|  32,000 |    26.33 ms |    4.38 ms |        6.0x |
+| 100,000 |    86.29 ms |   13.41 ms |        6.4x |
+
+The loop first costs a millisecond between 1,000 rows (699 µs) and 3,200
+(2.28 ms). That is the size where the packed scan starts to pay for itself.
+Below it, skip the package.
+
+This sweep is the Dart VM. dart2js and dart2wasm were not measured here:
+they need Chrome, and this run did not launch a browser. The one web
+comparison in the repo is 1,000 × 384 in `test/platform_cost_test.dart`,
+under [Off the Dart VM](#off-the-dart-vm).
+
 ## Why this instead of what you already have
 
 **Instead of a scalar loop.** The chart above comes from `dart run
@@ -43,8 +79,9 @@ is the 84.4 ms above.
 - You need the top k rather than one pairwise distance, and want the same answer
   a naive scan would give.
 
-Skip it if you have a few hundred vectors, where a plain loop finishes in under
-a millisecond and the packed-buffer bookkeeping is cost with nothing behind it.
+Skip it if you have a few hundred vectors. The table above is that
+measurement: a plain loop finishes in tens to hundreds of microseconds, and
+the packed-buffer bookkeeping is cost with nothing behind it.
 
 Dart has shipped SIMD types in `dart:typed_data` for years. Using `Float32x4`
 well means alignment rules, scalar tails for lengths that are not a multiple of

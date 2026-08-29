@@ -5,17 +5,21 @@ packed buffer, plus pairwise `dot`, `cosineSimilarity`, and
 `euclideanDistance` on `Float32List`. Every query reads every row; this is
 not an approximate index.
 
-Do not import this package for a few hundred vectors. At N=500 a
-hand-written loop is the right answer. The closest measurement in this repo
-is 1000 rows × 384 dims (`test/platform_cost_test.dart`, k=10): a packed
-scalar scan with cached row norms costs 257 µs/query on the Dart VM, 258 µs
-on dart2js, 272 µs on dart2wasm. `VectorMatrix.topKCosine` is 77 µs on the
-VM (3.3× faster than that loop) and slower than the loop on the web (322 µs
-dart2js, 292 µs dart2wasm). All of those are well under a millisecond. The
-package
-starts to matter when a full scan costs milliseconds: `bench/bench.dart` on
-768-d vectors, k=10, measures scan-and-sort at 7.2 ms vs 1.4 ms at 10,000
-rows, and 82.0 ms vs 13.3 ms at 100,000 rows.
+Do not import this package for a few hundred vectors. A hand-written loop
+is the right answer until a query costs milliseconds. The measurement is
+`bench/break_even.dart`: 10 to 100,000 rows × 768 dims, k=10, Dart VM, the
+same scan-and-sort `bench/bench.dart` uses. A cosine loop plus a sort is
+5.9 µs at N=10 against 1.9 µs for `VectorMatrix.topKCosine`, 699 µs against
+136 µs at N=1,000, 2.28 ms against 429 µs at N=3,200, and 86.3 ms against
+13.4 ms at N=100,000. The package is faster at every measured N; it still
+does not pay for a dependency below a few thousand rows, where the loop is
+under a millisecond. dart2js and dart2wasm were not part of that sweep
+(it does not launch a browser). The web comparison is still 1000 rows ×
+384 dims (`test/platform_cost_test.dart`, k=10): a packed scalar scan with
+cached row norms costs 257 µs/query on the Dart VM, 258 µs on dart2js,
+272 µs on dart2wasm. `VectorMatrix.topKCosine` is 77 µs on the VM (3.3×
+faster than that loop) and slower than the loop on the web (322 µs dart2js,
+292 µs dart2wasm). All of those are well under a millisecond.
 
 ## Usage
 
@@ -103,7 +107,7 @@ relative to the product of input norms up to dimension 1024.
 ## Mistakes
 
 - N=500. Symptom: a dependency for a sub-millisecond loop. Fix: write the
-  scan; numbers are in the opening section.
+  scan; `bench/break_even.dart` is the sweep.
 - Write through `rowAt`. Symptom: wrong `topKCosine` ranks. Fix: treat the
   view as read-only; rebuild if rows change.
 - `dot` on `List<double>`. Symptom: compile error. Fix: `Float32List.fromList`.
@@ -143,6 +147,7 @@ relative to the product of input norms up to dimension 1024.
   `dart test test/platform_cost_test.dart -t bench`, and the same with
   `-p chrome` and `-p chrome -c dart2wasm`.
 - `dart run bench/bench.dart` — 768-d dot and 10k/100k top-k.
+- `dart run bench/break_even.dart` — N sweep of top-k vs loop+sort, Dart VM.
 - `dart run benchmark/quantization_benchmark.dart` — int8 figures.
 - `doc/web-performance.md` — platform table.
 

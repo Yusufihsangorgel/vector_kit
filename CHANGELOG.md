@@ -1,3 +1,20 @@
+## 1.3.1
+
+No library code changed in this release. `lib/` is byte-identical to 1.3.0.
+
+- The README was missing the number that decides whether to take the
+  dependency: at what corpus size `VectorMatrix.topKCosine` beats a
+  hand-written cosine loop plus a sort. `bench/break_even.dart` reuses
+  that scan-and-sort from `bench/bench.dart` and sweeps 10 to 100,000
+  rows at 768 dimensions on the Dart VM. The packed scan is faster at
+  every size in the range — 3.1x at 10 rows (5.9 µs against 1.9 µs) and
+  6.4x at 100,000 (86.3 ms against 13.4 ms) — and the loop only crosses
+  a millisecond between 1,000 and 3,200 rows, which is where the package
+  starts to pay for itself. The table sits near the top of the README so
+  a reader can skip the package in ten seconds instead of adopting it
+  for a few hundred vectors. dart2js and dart2wasm were not part of the
+  sweep: they need Chrome.
+
 ## 1.3.0
 
 - `QuantizedMatrix` gains `topKEuclidean`. It was the one search the float

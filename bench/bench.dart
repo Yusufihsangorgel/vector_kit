@@ -14,6 +14,8 @@ import 'dart:typed_data';
 
 import 'package:vector_kit/vector_kit.dart';
 
+import 'naive.dart';
+
 const dim = 768;
 const dotCalls = 1000000;
 const pool = 8;
@@ -60,27 +62,6 @@ double simdDotOneAccumulator(Float32List a, Float32List b) {
     sum += a[i] * b[i];
   }
   return sum;
-}
-
-double naiveCosine(Float32List a, Float32List b) {
-  var dot = 0.0;
-  var na = 0.0;
-  var nb = 0.0;
-  for (var i = 0; i < a.length; i++) {
-    dot += a[i] * b[i];
-    na += a[i] * a[i];
-    nb += b[i] * b[i];
-  }
-  return dot / (sqrt(na) * sqrt(nb));
-}
-
-/// Full scan, score every row, sort, take k: the baseline top-k.
-List<(int, double)> naiveTopKCosine(VectorMatrix m, Float32List query) {
-  final scored = [
-    for (var r = 0; r < m.rowCount; r++) (r, naiveCosine(m.rowAt(r), query)),
-  ];
-  scored.sort((a, b) => b.$2.compareTo(a.$2));
-  return scored.sublist(0, min(k, scored.length));
 }
 
 double runDotVariant(
@@ -173,7 +154,7 @@ void benchTopK(int rows) {
   // Warm up both paths and check that they agree on the winners.
   var agreement = 0;
   for (final query in queries.take(3)) {
-    final naive = naiveTopKCosine(matrix, query);
+    final naive = naiveTopKCosine(matrix, query, k);
     final simd = matrix.topKCosine(query, k);
     for (var i = 0; i < k; i++) {
       if (naive[i].$1 == simd[i].$1) agreement++;
@@ -183,7 +164,7 @@ void benchTopK(int rows) {
   var checksum = 0;
   final naiveWatch = Stopwatch()..start();
   for (final query in queries) {
-    checksum += naiveTopKCosine(matrix, query).first.$1;
+    checksum += naiveTopKCosine(matrix, query, k).first.$1;
   }
   naiveWatch.stop();
 
