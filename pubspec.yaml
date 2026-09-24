@@ -9,7 +9,7 @@ topics:
   - vectors
   - embeddings
   - similarity
-  - performance
+  - cosine-similarity
 
 # Single-line double-quoted on purpose. A folded (>-) block wraps at the line
 # break and pub.dev renders the wrap point as a space, which split
