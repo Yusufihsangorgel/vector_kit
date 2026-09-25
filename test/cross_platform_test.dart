@@ -63,8 +63,7 @@ void main() {
       'dot': m.topKDot(buildQuery(1), k).map((e) => e.$1).toList(),
       'euclidean': m.topKEuclidean(buildQuery(1), k).map((e) => e.$1).toList(),
     };
-    // ignore: avoid_print
-    print('cross-platform top-$k: $actual');
+    printOnFailure('cross-platform top-$k: $actual');
     expect(actual, expected);
   });
 
@@ -82,8 +81,7 @@ void main() {
     for (var q = 1; q <= 3; q++) {
       scores.add(m.topKCosine(buildQuery(q), 1).first.$2);
     }
-    // ignore: avoid_print
-    print('cross-platform score: $scores');
+    printOnFailure('cross-platform score: $scores');
     for (var i = 0; i < scores.length; i++) {
       expect(
         (scores[i] - expectedCosine[i]).abs(),

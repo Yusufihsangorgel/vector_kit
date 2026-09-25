@@ -215,7 +215,7 @@
       "anchor": "middle",
       "size": 13,
       "color": "slate",
-      "s": "benchmark/quantization_benchmark.dart, seeded, on an Apple M-series core"
+      "s": "bench/quantization_benchmark.dart, seeded, on an Apple M-series core"
     }
   ]
 }

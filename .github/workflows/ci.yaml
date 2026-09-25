@@ -24,6 +24,8 @@ jobs:
         run: dart format --output=none --set-exit-if-changed .
       - name: Analyze
         run: dart analyze --fatal-infos
+      # The bench-tagged platform measurements run here and on both Chrome
+      # targets below. Their timings are diagnostic and have no threshold.
       - name: Test
         run: dart test
 

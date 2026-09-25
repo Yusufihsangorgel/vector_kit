@@ -35,6 +35,22 @@ Never _throwNonFinite(Float32List original, Float32List aligned, String name) {
   );
 }
 
+void _throwNonFinitePair(
+  Float32List a,
+  Float32List alignedA,
+  Float32List b,
+  Float32List alignedB,
+) {
+  final badA = firstNonFinite(alignedA);
+  if (badA >= 0) {
+    throw ArgumentError.value(a[badA], 'a', 'component $badA is not finite');
+  }
+  final badB = firstNonFinite(alignedB);
+  if (badB >= 0) {
+    throw ArgumentError.value(b[badB], 'b', 'component $badB is not finite');
+  }
+}
+
 /// Returns the dot product of [a] and [b].
 ///
 /// On the Dart VM the inner loop processes four components per step with
@@ -63,14 +79,7 @@ double dot(Float32List a, Float32List b) {
   final cb = alignedView(b);
   final sum = dotFull(ca, cb);
   if (sum.isFinite) return sum;
-  final badA = firstNonFinite(ca);
-  if (badA >= 0) {
-    throw ArgumentError.value(a[badA], 'a', 'component $badA is not finite');
-  }
-  final badB = firstNonFinite(cb);
-  if (badB >= 0) {
-    throw ArgumentError.value(b[badB], 'b', 'component $badB is not finite');
-  }
+  _throwNonFinitePair(a, ca, b, cb);
   return sum;
 }
 
@@ -138,14 +147,7 @@ double euclideanDistance(Float32List a, Float32List b) {
   final cb = alignedView(b);
   final sum = squaredDistanceFull(ca, cb);
   if (sum.isFinite) return math.sqrt(sum);
-  final badA = firstNonFinite(ca);
-  if (badA >= 0) {
-    throw ArgumentError.value(a[badA], 'a', 'component $badA is not finite');
-  }
-  final badB = firstNonFinite(cb);
-  if (badB >= 0) {
-    throw ArgumentError.value(b[badB], 'b', 'component $badB is not finite');
-  }
+  _throwNonFinitePair(a, ca, b, cb);
   return math.sqrt(sum);
 }
 

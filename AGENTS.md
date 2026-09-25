@@ -74,7 +74,7 @@ Pairwise functions accept `Float32List` only, not `List<double>`.
 
 Quantized cost. `QuantizedMatrix.from` stores int8 components plus per-row
 scale and the L2 norm of the dequantized stored row, not the source.
-`benchmark/quantization_benchmark.dart` on 5,000 × 768 unit vectors: 14.6 MB
+`bench/quantization_benchmark.dart` on 5,000 × 768 unit vectors: 14.6 MB
 → 3.7 MB (3.9× smaller), recall@10 99.3% of the float top-10, search 664 →
 2723 µs/query (4.1× slower). That recall is an upper bound for random
 vectors; clustered embeddings confuse eight bits. `from` does not mutate
@@ -158,9 +158,9 @@ relative to the product of input norms up to dimension 1024.
 - Platform timings (print only):
   `dart test test/platform_cost_test.dart -t bench`, and the same with
   `-p chrome` and `-p chrome -c dart2wasm`.
-- `dart run bench/bench.dart` — 768-d dot and 10k/100k top-k.
-- `dart run bench/break_even.dart` — N sweep of top-k vs loop+sort, Dart VM.
-- `dart run benchmark/quantization_benchmark.dart` — int8 figures.
-- `doc/web-performance.md` — platform table.
+- `dart run bench/bench.dart`: 768-d dot and 10k/100k top-k.
+- `dart run bench/break_even.dart`: N sweep of top-k vs loop+sort, Dart VM.
+- `dart run bench/quantization_benchmark.dart`: int8 figures.
+- `doc/web-performance.md`: platform table.
 
 SDK `^3.8.0`. `dart analyze` must stay clean.

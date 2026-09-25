@@ -253,7 +253,7 @@ final hits = compact.topKCosine(query, 10);
 
 ![int8 quantization on 5,000 vectors of 768 dimensions: memory drops from 14.6 MB to 3.7 MB, 3.9 times smaller; 99.3% of the float top-10 survives quantization; search is 4.1 times slower, 664 to 2723 microseconds per query, because the int8 rows cannot take the SIMD float path, which buys memory and costs throughput.](https://raw.githubusercontent.com/Yusufihsangorgel/vector_kit/main/doc/quantization.png)
 
-`benchmark/quantization_benchmark.dart`, seeded, on an Apple M-series core:
+`bench/quantization_benchmark.dart`, seeded, on an Apple M-series core:
 
 | | float32 | int8 |
 |---|---|---|

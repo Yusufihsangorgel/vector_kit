@@ -10,6 +10,4 @@
 // So the SIMD kernels ship for the VM and a scalar set ships everywhere else.
 // Both expose the same names and the same `Lanes` type alias, so no call site
 // knows which one it got.
-export 'simd_native.dart'
-    if (dart.library.js_interop) 'simd_web.dart'
-    if (dart.library.js) 'simd_web.dart';
+export 'simd_native.dart' if (dart.library.js_interop) 'simd_web.dart';

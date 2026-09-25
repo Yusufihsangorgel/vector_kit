@@ -1,6 +1,6 @@
 // What int8 quantization buys and what it costs, measured on the same vectors.
 //
-//   dart run benchmark/quantization_benchmark.dart
+//   dart run bench/quantization_benchmark.dart
 //
 // Recall@10 is the fraction of a query's true top-10 (by the float matrix) that
 // the quantized matrix also returns in its top-10 — how much of the answer
