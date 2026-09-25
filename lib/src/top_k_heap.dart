@@ -2,8 +2,8 @@ part of 'vector_matrix.dart';
 
 /// Bounded binary min-heap that keeps the largest scores seen.
 ///
-/// The root is the worst of the kept scores, so a candidate only causes
-/// work when it beats the current worst.
+/// The root is the worst of the kept scores. A candidate only causes work
+/// when it beats the current worst.
 class _TopKHeap {
   _TopKHeap(this.capacity)
     : _scores = Float64List(capacity),

@@ -5,12 +5,12 @@ part of 'vector_matrix.dart';
 ///
 /// Each row is scaled so its largest component maps to 127 and stored as one
 /// byte per dimension, next to the scale that undoes it. For 768-dimension
-/// embeddings that is 768 bytes a row instead of 3072, so a corpus that took
+/// embeddings that is 768 bytes a row instead of 3072. A corpus that took
 /// 300 MB takes about 75 MB, which is the difference between holding an index
 /// on a phone and not.
 ///
 /// The trade is accuracy and speed, in that order. Scores come back close to
-/// the float32 ones but not equal, so measure recall on your own vectors
+/// the float32 ones but not equal. Measure recall on your own vectors
 /// before trusting it: [QuantizedMatrix.from] keeps the original matrix
 /// untouched so the two can be compared directly. Search is also slower here,
 /// not faster, because the byte rows cannot go through the same SIMD path the
@@ -42,7 +42,7 @@ final class QuantizedMatrix {
         if (a > maxAbs) maxAbs = a;
       }
       // An all-zero row has no scale that means anything; leave it zero and
-      // let the search skip it the way the float path skips a zero norm.
+      // let the search skip it, as the float path skips a zero norm.
       final scale = maxAbs == 0 ? 0.0 : maxAbs / 127.0;
       scales[r] = scale;
       final base = r * dimension;
@@ -50,7 +50,7 @@ final class QuantizedMatrix {
       for (var i = 0; i < dimension; i++) {
         final q = scale == 0 ? 0 : (row[i] / scale).round().clamp(-127, 127);
         data[base + i] = q;
-        // Norm of what is actually stored, so cosine is exact with respect to
+        // Norm of what is actually stored: cosine is exact with respect to
         // the rounded vector rather than to the original it came from.
         final dequantized = q * scale;
         sum2 += dequantized * dequantized;
@@ -132,7 +132,7 @@ final class QuantizedMatrix {
   }
 
   /// The [k] rows nearest to [query] by Euclidean distance, nearest first.
-  /// The score is the distance itself, so smaller is better.
+  /// The score is the distance itself: smaller is better.
   ///
   /// Distances are measured against the stored rows, which are the rounded
   /// ones, the same way [topKCosine] scores against the norm of what is
@@ -140,7 +140,7 @@ final class QuantizedMatrix {
   ///
   /// Two things differ from [topKCosine], both because a distance is defined
   /// where an angle is not. A zero row is scored instead of skipped, since
-  /// the origin is a real point and can be the nearest one, so the result
+  /// the origin is a real point and can be the nearest one. The result
   /// always holds `min(k, rowCount)` entries. A zero query is allowed, and
   /// then each row is scored by its own norm.
   ///
@@ -167,7 +167,7 @@ final class QuantizedMatrix {
       }
       // Negated so the keep-the-largest heap shared with the other two
       // searches keeps the nearest rows rather than the farthest. A sum of
-      // squares cannot be negative, so the root below needs no clamp.
+      // squares cannot be negative, and the root below needs no clamp.
       heap.offer(r, -sum2);
     }
     return [

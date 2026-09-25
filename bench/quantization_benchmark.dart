@@ -3,7 +3,7 @@
 //   dart run bench/quantization_benchmark.dart
 //
 // Recall@10 is the fraction of a query's true top-10 (by the float matrix) that
-// the quantized matrix also returns in its top-10 — how much of the answer
+// the quantized matrix also returns in its top-10: how much of the answer
 // survives the rounding. Memory is the stored bytes of each. Time is the search
 // itself; quantization trades throughput for memory, and this shows by how much.
 import 'dart:math';
@@ -82,6 +82,6 @@ void main() {
   print(
     '         int8     ${us(swQuant)}   '
     '(${(swQuant.elapsedMicroseconds / swFloat.elapsedMicroseconds).toStringAsFixed(1)}x '
-    'the float time — memory is the trade, not speed)',
+    'the float time: memory is the trade, not speed)',
   );
 }
