@@ -1,0 +1,245 @@
+{
+  "schema_version": 1,
+  "package": "vector_kit",
+  "survey_digest": "f90f45c8a172068c3ed3b9488ba5a7cb4e58efa93c380d2d9a70b399349ec35e",
+  "items": [
+    {
+      "id": "vector_kit-D001",
+      "source_index": 1,
+      "source_item_digest": "7fbb2130062f8a296cad909848724905f40841e1bb7a0fb637451eaaf3b52975",
+      "baseline_revision": "50e9f3f",
+      "status": "open",
+      "size": "small",
+      "locations": [
+        {
+          "path": "test/euclidean_repro_test.dart",
+          "lines": "1-19"
+        }
+      ],
+      "kind": "temporary file committed",
+      "observation": "The file describes itself as 'TEMPORARY reproduction file. Delete after capturing the failure.' and entered through snapshot commit 34e84e4. quantized_matrix_test.dart already uses topKEuclidean in 14 places.",
+      "certainty": "confirmed",
+      "proposed_fix": "Delete the file. If its claim is absent from quantized_matrix_test.dart, move it there as a named regression test.",
+      "related_rule_ids": [
+        "vector_kit/VEC-09",
+        "vector_kit/VEC-11"
+      ],
+      "issue_url": null,
+      "closure_criteria": "test/euclidean_repro_test.dart is deleted. Any claim it makes that quantized_matrix_test.dart lacks exists there as a named regression test.",
+      "review_trigger": "Before modifying the affected code",
+      "resolution": null
+    },
+    {
+      "id": "vector_kit-D002",
+      "source_index": 2,
+      "source_item_digest": "23c95272ffb942cab9ac2e047215889f95a00ee8167ca1b4fd81a011183eaf51",
+      "baseline_revision": "50e9f3f",
+      "status": "open",
+      "size": "small",
+      "locations": [
+        {
+          "path": "tool/euclid_probe.dart",
+          "lines": "1-8"
+        }
+      ],
+      "kind": "temporary file + duplicated logic",
+      "observation": "'TEMPORARY probe'. It copies QuantizedMatrix.from line by line (line 8 says this itself) and drifts silently when the lib changes. The conclusion is already in the vector_matrix.dart:617-622 comment.",
+      "certainty": "confirmed",
+      "proposed_fix": "Delete the file.",
+      "related_rule_ids": [
+        "vector_kit/VEC-09"
+      ],
+      "issue_url": null,
+      "closure_criteria": "tool/euclid_probe.dart is deleted.",
+      "review_trigger": "Before modifying the affected code",
+      "resolution": null
+    },
+    {
+      "id": "vector_kit-D003",
+      "source_index": 3,
+      "source_item_digest": "78118d55093695eafc81d0bb8e367258a31122b3e0674f42e54fafdc9fcc7f93",
+      "baseline_revision": "50e9f3f",
+      "status": "open",
+      "size": "small",
+      "locations": [
+        {
+          "path": "lib/src/vector_matrix.dart",
+          "lines": "536-537"
+        }
+      ],
+      "kind": "stale dartdoc",
+      "observation": "It says 'Compare with `matrix.length * matrix.dimension * 4`'. VectorMatrix has no `length`; the correct getter is `rowCount`.",
+      "certainty": "confirmed",
+      "proposed_fix": "Fix it to `matrix.rowCount * matrix.dimension * 4`.",
+      "related_rule_ids": [],
+      "issue_url": null,
+      "closure_criteria": "The dartdoc at vector_matrix.dart:536-537 names matrix.rowCount instead of matrix.length.",
+      "review_trigger": "Before modifying the affected code",
+      "resolution": null
+    },
+    {
+      "id": "vector_kit-D004",
+      "source_index": 4,
+      "source_item_digest": "9e993430a75cc60c8cc744b2ec52168007df72c7b3cf4f541a04eecfb1f06880",
+      "baseline_revision": "50e9f3f",
+      "status": "open",
+      "size": "small",
+      "locations": [
+        {
+          "path": "lib/src/simd.dart",
+          "lines": "15"
+        }
+      ],
+      "kind": "probable dead code",
+      "observation": "With sdk ^3.8.0 every web compiler provides `dart.library.js_interop` (line 14). The `dart.library.js` branch appears unreachable.",
+      "certainty": "probable",
+      "proposed_fix": "Delete the line. The item closes if the chrome dart2js and dart2wasm jobs stay green.",
+      "related_rule_ids": [],
+      "issue_url": null,
+      "closure_criteria": "The dart.library.js branch is gone from simd.dart and the chrome dart2js and dart2wasm CI jobs stay green.",
+      "review_trigger": "Before modifying the affected code",
+      "resolution": null
+    },
+    {
+      "id": "vector_kit-D005",
+      "source_index": 5,
+      "source_item_digest": "1f620eed3eed75908dd78e7ff6697487e422ea318977a59f92d1206794291cd4",
+      "baseline_revision": "50e9f3f",
+      "status": "open",
+      "size": "small",
+      "locations": [
+        {
+          "path": "bench/",
+          "lines": null
+        },
+        {
+          "path": "bench/bench.dart",
+          "lines": null
+        },
+        {
+          "path": "bench/break_even.dart",
+          "lines": null
+        },
+        {
+          "path": "bench/naive.dart",
+          "lines": null
+        },
+        {
+          "path": "benchmark/",
+          "lines": null
+        },
+        {
+          "path": "benchmark/quantization_benchmark.dart",
+          "lines": null
+        }
+      ],
+      "kind": "scattered layout",
+      "observation": "Benchmark scripts are split across two separate directories.",
+      "certainty": "confirmed",
+      "proposed_fix": "Gather them in one directory and update the README and AGENTS.md references.",
+      "related_rule_ids": [
+        "vector_kit/VEC-08"
+      ],
+      "issue_url": null,
+      "closure_criteria": "All benchmark scripts live in one directory and the README and AGENTS.md references point to it.",
+      "review_trigger": "Before modifying the affected code",
+      "resolution": null
+    },
+    {
+      "id": "vector_kit-D006",
+      "source_index": 6,
+      "source_item_digest": "dc6077beafc6dbe8e26b1b9883703ee76501a1480e66f671f544af3565956851",
+      "baseline_revision": "50e9f3f",
+      "status": "open",
+      "size": "small",
+      "locations": [
+        {
+          "path": "test/platform_cost_test.dart",
+          "lines": "1"
+        }
+      ],
+      "kind": "undefined test tag",
+      "observation": "`@Tags(['bench'])` exists but there is no dart_test.yaml. package:test prints a warning and CI runs the measurement on three targets.",
+      "certainty": "confirmed",
+      "proposed_fix": "Define the `bench` tag in dart_test.yaml. If CI runs it on purpose, state this in ci.yaml; if it should not run, add `-x bench`.",
+      "related_rule_ids": [],
+      "issue_url": null,
+      "closure_criteria": "dart_test.yaml defines the bench tag and package:test prints no warning. ci.yaml either states that CI runs the tag on purpose or adds -x bench.",
+      "review_trigger": "Before modifying the affected code",
+      "resolution": null
+    },
+    {
+      "id": "vector_kit-D007",
+      "source_index": 7,
+      "source_item_digest": "f002a5fdc9f6d781e7910db2888bf4ec50af06bee1c7e3d761e64085f33e6fad",
+      "baseline_revision": "50e9f3f",
+      "status": "open",
+      "size": "small",
+      "locations": [
+        {
+          "path": "test/cross_platform_test.dart",
+          "lines": "66-67,85-86"
+        }
+      ],
+      "kind": "lint suppression",
+      "observation": "Diagnostic output is printed with `print` and `// ignore: avoid_print`.",
+      "certainty": "confirmed",
+      "proposed_fix": "Use `printOnFailure` (no ignore needed).",
+      "related_rule_ids": [],
+      "issue_url": null,
+      "closure_criteria": "cross_platform_test.dart prints diagnostics with printOnFailure and contains no ignore: avoid_print comment.",
+      "review_trigger": "Before modifying the affected code",
+      "resolution": null
+    },
+    {
+      "id": "vector_kit-D008",
+      "source_index": 8,
+      "source_item_digest": "70e068d964a420447b72ea9eaf74431c12a3be2d13c298104029e716e32be278",
+      "baseline_revision": "50e9f3f",
+      "status": "open",
+      "size": "small",
+      "locations": [
+        {
+          "path": "lib/src/vector_matrix.dart",
+          "lines": "390-660"
+        }
+      ],
+      "kind": "file size / single responsibility",
+      "observation": "A 660-line file combines VectorMatrix, _TopKHeap and QuantizedMatrix.",
+      "certainty": "confirmed",
+      "proposed_fix": "Move QuantizedMatrix to its own lib/src file and the heap to a shared private file. The exports stay the same.",
+      "related_rule_ids": [
+        "vector_kit/VEC-12"
+      ],
+      "issue_url": null,
+      "closure_criteria": "QuantizedMatrix lives in its own lib/src file and _TopKHeap in a shared private file with the exports unchanged. The package tests pass.",
+      "review_trigger": "Before modifying the affected code",
+      "resolution": null
+    },
+    {
+      "id": "vector_kit-D009",
+      "source_index": 9,
+      "source_item_digest": "41116f2b6ccd7828da9a079347266b614a3a1f67cfdc523cfa1b9fb0e37372ab",
+      "baseline_revision": "50e9f3f",
+      "status": "open",
+      "size": "small",
+      "locations": [
+        {
+          "path": "lib/src/ops.dart",
+          "lines": "66-73,141-148"
+        }
+      ],
+      "kind": "duplicated logic",
+      "observation": "The 'find a non-finite component first in a then in b and throw' block is written twice. For the norm case `_throwNonFinite` (22-36) already exists.",
+      "certainty": "confirmed",
+      "proposed_fix": "A single helper for pairs. Safety net: ops_test.dart.",
+      "related_rule_ids": [
+        "vector_kit/VEC-04"
+      ],
+      "issue_url": null,
+      "closure_criteria": "One shared helper checks non-finite components for vector pairs and both ops.dart sites call it. ops_test.dart passes.",
+      "review_trigger": "Before modifying the affected code",
+      "resolution": null
+    }
+  ]
+}

@@ -164,3 +164,7 @@ relative to the product of input norms up to dimension 1024.
 - `doc/web-performance.md` — platform table.
 
 SDK `^3.8.0`. `dart analyze` must stay clean.
+
+## Contributing
+
+Before changing this repository, read [CONTRIBUTING.md](CONTRIBUTING.md), [package engineering rules](docs/engineering/package.md), and the [debt register](docs/engineering/debt.json). These requirements apply to every contributor. The usage guidance above remains the consumer contract.
