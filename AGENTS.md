@@ -138,8 +138,8 @@ relative to the product of input norms up to dimension 1024.
 - `VectorKitStore` for a few hundred rag_kit chunks, or on the web, for
   speed. Symptom: a dependency for a sub-millisecond loop, or a slowdown
   on dart2js / dart2wasm. `InMemoryVectorStore` already caches norms and
-  uses a k-heap. The packed scan pays off on the Dart VM from a few
-  thousand chunks up.
+  uses a k-heap. Nothing in this repository times the adapter against it.
+  Benchmark both on your corpus before choosing the adapter for speed.
 
 ## Where
 

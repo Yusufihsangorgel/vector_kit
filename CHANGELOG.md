@@ -2,9 +2,9 @@
 
 No library code changed in this release.
 
-- The README and the example README no longer say the adapter is the better
-  backend from a few thousand chunks up. They tell you to benchmark it against
-  `InMemoryVectorStore` on your corpus.
+- The README, the example README and AGENTS.md no longer say the adapter is
+  the better backend from a few thousand chunks up. They tell you to
+  benchmark it against `InMemoryVectorStore` on your corpus.
 - The 699 µs and 2.28 ms figures are now described as a scan and sort at 768
   dimensions. The cached-norm loop is measured separately at 1,000 rows of 384
   dimensions.
