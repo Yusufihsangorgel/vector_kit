@@ -17,13 +17,11 @@ import 'package:vector_kit/vector_kit.dart';
 /// A [VectorStore] that scores with [VectorMatrix.topKCosine] on the
 /// unfiltered path.
 ///
-/// Worth it on the Dart VM from a few thousand chunks up. rag_kit's
-/// [InMemoryVectorStore] already caches L2 norms and keeps a k-heap, which
-/// is the careful loop in `test/platform_cost_test.dart`, not the naive
-/// sort in `bench/break_even.dart`. That loop costs a millisecond between
-/// 1,000 and 3,200 rows of 768 dimensions; below that, keep the in-memory
-/// store. On the web the packed scan is slower than the loop, so this is
-/// not a speedup there.
+/// rag_kit's [InMemoryVectorStore] already caches L2 norms and keeps a
+/// k-heap, which is the careful loop in `test/platform_cost_test.dart`, not
+/// the naive sort in `bench/break_even.dart`. Benchmark both stores on your
+/// corpus before choosing this one for speed. On the web the packed scan is
+/// slower than the loop. It is not a speedup there.
 ///
 /// [VectorMatrix] is append-only. A replace or a removal rebuilds it.
 /// Index once and query many times; a write-heavy store wants a different

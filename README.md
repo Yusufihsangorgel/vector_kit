@@ -62,13 +62,10 @@ sort over 100,000 x 768 against 13.9 ms for `VectorMatrix.topKCosine`
 The harness also checks that both sides return the same ten rows in the same
 order, and prints the agreement count next to the timings.
 
-**Instead of `ml_linalg`.** It is the established SIMD linear algebra package
-for Dart and it is good at what it covers, including `getCosine` and
-`distanceTo(..., distance: Distance.cosine)` between two vectors
-(`lib/vector.dart:352` and `:346`). Search its 6,544 lines and its README for
-`topk`, `top_k`, `nearest`, or `knn` and there are no hits. Searching a matrix of
-embeddings still means your own loop over every row and a sort at the end, which
-is the 84.4 ms above.
+**Instead of `ml_linalg`.** `ml_linalg` is a SIMD linear algebra package for
+Dart. This package covers a narrower job: `VectorMatrix.topKCosine` scans the
+packed rows of a matrix and returns the highest scoring rows. You do not
+write the loop over every row and the sort at the end yourself.
 
 **Reach for it when**
 
@@ -289,8 +286,8 @@ documents that on `maxResultCount`, and the request to spell it out in the
 vector-search guide has been
 [open since 2024](https://github.com/objectbox/objectbox-dart/issues/658).
 Here the equivalent move is exact: `topKCosine(query, matrix.rowCount)` scores
-and orders every row, and filtering that list afterwards still leaves you the
-true top-k of whatever survives.
+and orders every row with a nonzero norm, and filtering that list afterwards
+still leaves you the true top-k of whatever survives.
 
 Missing on purpose: no metadata or filter DSL, since `topK*` returns row
 indices and what a row means is yours to store; no isolate pool; no
@@ -326,15 +323,16 @@ final retriever = Retriever(
 );
 ```
 
-**When it is worth it.** On the Dart VM, a query over the careful loop
-first costs a millisecond between 1,000 and 3,200 rows of 768
-dimensions (`dart run bench/break_even.dart`). Below a few thousand
-chunks — a handbook, a small notes corpus — keep
-`InMemoryVectorStore`. From a few thousand up, and clearly at the
-10k–100k sizes rag_kit names as its range, the packed scan is the
-better backend on the VM (5.5x at 10,000 rows, 6.4x at 100,000 against
-the sort; about 3x against the careful loop at 1,000 × 384). On the
-web, `VectorMatrix.topKCosine` is slower than that loop (322 µs vs
+**When it is worth it.** The 699 µs and 2.28 ms figures in the break-even
+table measure a scan and sort at 768 dimensions
+(`dart run bench/break_even.dart`). They do not describe the careful loop.
+That loop is measured separately in `test/platform_cost_test.dart`, at 1,000
+rows of 384 dimensions: on the VM `VectorMatrix.topKCosine` is about 3.3x
+faster (77 µs against 257 µs). Against the sort, the packed scan is 5.5x
+faster at 10,000 rows and 6.4x at 100,000. Nothing in this repository times
+the adapter against `InMemoryVectorStore`. Benchmark both on your corpus
+before choosing the adapter for speed. On the web,
+`VectorMatrix.topKCosine` is slower than the careful loop (322 µs vs
 258 µs dart2js, 292 µs vs 272 µs dart2wasm at 1,000 × 384), so this
 adapter is not a speedup there.
 

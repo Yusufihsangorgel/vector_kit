@@ -1,3 +1,18 @@
+## 1.4.1
+
+No library code changed in this release.
+
+- The README and the example README no longer say the adapter is the better
+  backend from a few thousand chunks up. They tell you to benchmark it against
+  `InMemoryVectorStore` on your corpus.
+- The 699 µs and 2.28 ms figures are now described as a scan and sort at 768
+  dimensions. The cached-norm loop is measured separately at 1,000 rows of 384
+  dimensions.
+- The `ml_linalg` comparison in the README no longer makes claims about that
+  package's source.
+- The README now says `topKCosine` skips zero-norm rows when you ask for every
+  row.
+
 ## 1.4.0
 
 - A `VectorStore` for [rag_kit](https://pub.dev/packages/rag_kit), so a
@@ -9,14 +24,14 @@
   dev dependency, used by that file and by the contract tests. Copy the
   adapter into an app that already depends on both packages.
 
-  It is not a speedup at the size most rag_kit corpora start at.
+  Whether it is a speedup depends on corpus size and platform.
   `InMemoryVectorStore` already caches L2 norms and keeps a k-heap — the
   careful loop in `test/platform_cost_test.dart`, not the naive sort in
-  `bench/break_even.dart`. That loop first costs a millisecond between
-  1,000 rows (699 µs) and 3,200 (2.28 ms) of 768 dimensions on the Dart
-  VM. Below a few thousand chunks, keep the in-memory store. From there
-  up, and clearly at the 10k–100k sizes rag_kit names as its range, the
-  packed scan is the better backend on the VM. On the web
+  `bench/break_even.dart`. The 699 µs (1,000 rows) and 2.28 ms (3,200
+  rows) figures of 768 dimensions come from the scan-and-sort benchmark.
+  The cached-norm loop has a separate measurement at 1,000 rows of 384
+  dimensions. Nothing here times the adapter against the in-memory store.
+  Benchmark both on your corpus before choosing it for speed. On the web
   `VectorMatrix.topKCosine` is slower than the same loop, so this is not
   the backend to reach for in dart2js or dart2wasm.
 

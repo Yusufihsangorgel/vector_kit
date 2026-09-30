@@ -88,11 +88,12 @@ the public library would make rag_kit a runtime dependency of every
 vector_kit user. Copy that file into an app that already depends on both
 packages.
 
-It is the better backend on the Dart VM from a few thousand chunks up, which
-is where a cosine loop first costs a millisecond. Below that, and on the web,
-keep rag_kit's `InMemoryVectorStore`. The package README spells out the
-sizes. `test/rag_kit_store_test.dart` asserts that the same query through both
-stores returns the same document order, including ties.
+Benchmark the adapter against rag_kit's `InMemoryVectorStore` on your corpus
+before choosing it for speed. On the web, `VectorMatrix.topKCosine` measured
+slower than a hand-written loop. Keep `InMemoryVectorStore` there. The
+package README has the figures. This repository checks that the two stores
+agree: `test/rag_kit_store_test.dart` asserts that the same query through both
+returns the same document order, including ties.
 
 ```
 dart run example/with_rag_kit.dart
