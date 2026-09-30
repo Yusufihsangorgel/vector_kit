@@ -53,32 +53,34 @@ under [Off the Dart VM](#off-the-dart-vm).
 
 ## Why this instead of what you already have
 
-**Instead of a scalar loop.** The chart above comes from `dart run
-bench/bench.dart`, which is in the repo and measures both sides in one process.
-A run on an Apple M-series laptop gives 647 ns per call for the `List<double>`
-dot product against 143 ns for `dot`, and 84.4 ms per query for a full scan and
-sort over 100,000 x 768 against 13.9 ms for `VectorMatrix.topKCosine`
-(`lib/src/vector_matrix.dart:236`). Those figures move a few percent run to run.
-The harness also checks that both sides return the same ten rows in the same
-order, and prints the agreement count next to the timings.
+Pick by what you would otherwise use.
 
-**Instead of `ml_linalg`.** `ml_linalg` is a SIMD linear algebra package for
-Dart. This package covers a narrower job: `VectorMatrix.topKCosine` scans the
-packed rows of a matrix and returns the highest scoring rows. You do not
-write the loop over every row and the sort at the end yourself.
-
-**Reach for it when**
-
-- You hold more than a few thousand embeddings in memory and a query has to feel
-  instant.
-- You are doing semantic search on-device, where a hosted vector index is not an
-  option.
-- You need the top k rather than one pairwise distance, and want the same answer
-  a naive scan would give.
-
-Skip it if you have a few hundred vectors. The table above is that
-measurement: a plain loop finishes in tens to hundreds of microseconds, and
-the packed-buffer bookkeeping is cost with nothing behind it.
+- **A hand-written loop.** Take vector_kit when a query scans about 1,000 rows
+  or more of 768 dimensions on the Dart VM and returns the top k. In the table above the
+  loop first costs a millisecond between 1,000 and 3,200 rows, and the packed
+  scan is 5.1x to 6.4x faster from 1,000 rows up. `bench/bench.dart` measures
+  both sides in one process and prints how many of the top-ten rows agree.
+  Keep the loop below that size, where the package is a dependency with
+  nothing behind it. Keep it if you need double-precision accumulation, since
+  the VM kernels accumulate in float32. On the web the loop is
+  1.25x faster on dart2js and 1.07x faster on dart2wasm at 1,000 x 384: a
+  careful loop with cached norms measured 258 µs and 272 µs, against 322 µs
+  and 292 µs for `VectorMatrix.topKCosine` (figures in `doc/web-performance.md`,
+  reproduced by `test/platform_cost_test.dart`). See
+  [Off the Dart VM](#off-the-dart-vm).
+- **`ml_linalg`.** It is a SIMD-based linear algebra and statistics
+  package. Take vector_kit when the job is the
+  top k rows of a stored matrix for one query: `VectorMatrix` has
+  `topKCosine`, `topKDot` and `topKEuclidean`, and the package has no matrix
+  arithmetic beyond `dot`, `cosineSimilarity`, `euclideanDistance` and
+  normalization. Take `ml_linalg` when you need linear algebra or statistics
+  beyond vector similarity.
+- **[objectbox](https://pub.dev/packages/objectbox).** Take vector_kit when
+  the corpus fits in memory and you want the exact top k with no index to tune
+  and no runtime dependency (`pubspec.yaml` lists none). Take ObjectBox when a
+  full scan per query is too slow for your corpus size, or when the vectors
+  must live in a database and be queried together with other fields. See
+  [What this is not](#what-this-is-not).
 
 Dart has shipped SIMD types in `dart:typed_data` for years. Using `Float32x4`
 well means alignment rules, scalar tails for lengths that are not a multiple of

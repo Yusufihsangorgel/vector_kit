@@ -12,6 +12,8 @@ No library code changed in this release.
   package's source.
 - The README now says `topKCosine` skips zero-norm rows when you ask for every
   row.
+- The README now says when to pick a hand-written loop, `ml_linalg` or ObjectBox
+  over this package.
 
 ## 1.4.0
 
