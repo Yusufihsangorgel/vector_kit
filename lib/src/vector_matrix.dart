@@ -533,7 +533,7 @@ final class QuantizedMatrix {
 
   /// Bytes held by the quantized rows and their scales and norms.
   ///
-  /// Compare with `matrix.length * matrix.dimension * 4` for the float32
+  /// Compare with `matrix.rowCount * matrix.dimension * 4` for the float32
   /// storage it replaces.
   int get byteSize =>
       _data.lengthInBytes + _scales.lengthInBytes + _norms.lengthInBytes;

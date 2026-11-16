@@ -2,6 +2,8 @@
 
 No library code changed in this release.
 
+- The `byteSize` dartdoc on `QuantizedMatrix` now names `rowCount`
+  instead of a `length` getter that does not exist.
 - The README, the example README and AGENTS.md no longer say the adapter is
   the better backend from a few thousand chunks up. They tell you to
   benchmark it against `InMemoryVectorStore` on your corpus.
