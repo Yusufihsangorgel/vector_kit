@@ -1,6 +1,7 @@
 ## 1.4.1
 
-No library code changed in this release.
+No API or behavior changed in this release. The only change under `lib/` is
+a dartdoc fix.
 
 - The `byteSize` dartdoc on `QuantizedMatrix` now names `rowCount`
   instead of a `length` getter that does not exist.
